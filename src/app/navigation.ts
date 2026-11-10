@@ -1,4 +1,16 @@
-import { Boxes, KeyRound, LayoutDashboard, Ruler, Tag, Tags, Users, type LucideIcon } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  Boxes,
+  KeyRound,
+  LayoutDashboard,
+  Ruler,
+  ScrollText,
+  Tag,
+  Tags,
+  Users,
+  Warehouse,
+  type LucideIcon,
+} from 'lucide-react'
 import { P, type Permission } from '@/config/permissions'
 
 export interface NavItem {
@@ -21,6 +33,14 @@ export interface NavSection {
 export const navigation: NavSection[] = [
   {
     items: [{ to: '/', label: 'Inicio', icon: LayoutDashboard }],
+  },
+  {
+    title: 'Inventario',
+    items: [
+      { to: '/inventory/stock', label: 'Stock', icon: Warehouse, permission: P.InventoryRead },
+      { to: '/inventory/kardex', label: 'Kardex', icon: ScrollText, permission: P.InventoryRead },
+      { to: '/inventory/transfers', label: 'Transferencias', icon: ArrowLeftRight, permission: P.InventoryRead },
+    ],
   },
   {
     title: 'Catálogo',

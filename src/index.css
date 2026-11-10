@@ -99,6 +99,20 @@
   }
 }
 
+/* Login: el formulario sube 8 px y aparece. Se ve una vez por sesión, así que puede tener entrada. */
+.login-enter {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 400ms var(--ease-snappy),
+    transform 400ms var(--ease-snappy);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 /* Movimiento reducido: menos y más suave, no cero. Se quitan los desplazamientos y escalas; la opacidad se queda. */
 @media (prefers-reduced-motion: reduce) {
   .dialog-panel[open] {
@@ -106,7 +120,8 @@
     transition: opacity 150ms ease-out;
   }
   .pressable:active:not(:disabled),
-  .pop-in {
+  .pop-in,
+  .login-enter {
     transform: none;
   }
   .drawer {

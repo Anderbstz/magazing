@@ -27,8 +27,12 @@ export function installAuthInterceptors() {
     const config = error.original?.config
     if (!config || config.skipAuthRefresh || config._retried) throw error
 
-    const token = await refreshSession().catch(() => {
-      throw new ApiError('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
+    const token = await refreshSession().catch((refreshError: unknown) => {
+      if (refreshError instanceof ApiError && refreshError.status === 401) {
+        throw new ApiError('Tu sesión expiró. Vuelve a iniciar sesión.', 401)
+      }
+      // Fallo de red o del servidor: se informa tal cual y la sesión se conserva.
+      throw refreshError
     })
 
     config._retried = true

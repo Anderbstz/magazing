@@ -1,20 +1,42 @@
-import { ShieldX } from 'lucide-react'
+import { ShieldX, WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
+import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import type { Permission } from '@/config/permissions'
-import { refreshSession } from './session'
+import { refreshSession, session } from './session'
 import { useCan, useSession } from './use-auth'
 
 /** Protege las rutas privadas: renueva la sesión guardada o manda al login. */
 export function RequireAuth() {
   const { status } = useSession()
   const location = useLocation()
+  const [failure, setFailure] = useState<{ message: string } | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    if (status === 'loading') refreshSession().catch(() => undefined)
-  }, [status])
+    if (status !== 'loading') return
+    let cancelled = false
+    refreshSession().catch((error: unknown) => {
+      // Si el error fue 401, la sesión ya se limpió y `status` pasa a 'anonymous'.
+      if (!cancelled) setFailure({ message: error instanceof Error ? error.message : 'Error desconocido' })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [status, attempt])
 
+  if (status === 'loading' && failure) {
+    return (
+      <SessionError
+        message={failure.message}
+        onRetry={() => {
+          setFailure(null)
+          setAttempt((n) => n + 1)
+        }}
+      />
+    )
+  }
   if (status === 'loading') return <SessionLoading />
   if (status === 'anonymous') {
     const from = location.pathname + location.search
@@ -44,6 +66,28 @@ function Forbidden() {
       <p className="max-w-sm text-sm text-slate-500">
         Tu rol no tiene permiso para ver esta sección. Pide acceso a un administrador.
       </p>
+    </div>
+  )
+}
+
+/** El servidor no respondió al renovar la sesión, pero el token sigue guardado: se puede reintentar. */
+function SessionError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center" role="alert">
+      <WifiOff className="size-8 text-amber-500" aria-hidden />
+      <p className="font-medium text-slate-800">No se pudo conectar con el servidor</p>
+      <p className="max-w-sm text-sm text-slate-500">{message}</p>
+      <div className="mt-2 flex gap-2">
+        <Button onClick={onRetry}>Reintentar</Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            session.clear()
+          }}
+        >
+          Ir al login
+        </Button>
+      </div>
     </div>
   )
 }

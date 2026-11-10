@@ -1,3 +1,4 @@
+import { ApiError } from '@/api/http'
 import type { Guid } from '@/api/types'
 import { authApi, type AuthResponse } from './api'
 
@@ -119,7 +120,9 @@ export function refreshSession(): Promise<string> {
       return response.accessToken
     })
     .catch((error) => {
-      session.clear()
+      // Solo un 401 significa que el refresh token ya no sirve. Un corte de red, un 5xx
+      // o un fallo pasajero de la BD no deben sacar al usuario: el token sigue siendo válido.
+      if (error instanceof ApiError && error.status === 401) session.clear()
       throw error
     })
     .finally(() => {

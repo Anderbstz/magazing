@@ -60,7 +60,11 @@ export function toApiError(error: unknown): ApiError {
       data?.error ??
       data?.detail ??
       data?.title ??
-      (status === 403 ? 'No tienes permiso para realizar esta acción.' : `Error ${status}`)
+      (status === 403
+        ? 'No tienes permiso para realizar esta acción.'
+        : status >= 500
+          ? 'El servidor no está disponible en este momento. Intenta de nuevo en unos segundos.'
+          : `Error ${status}`)
 
     return new ApiError(message, status, data?.errors, error)
   }

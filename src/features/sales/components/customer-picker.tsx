@@ -22,7 +22,7 @@ export function CustomerPicker({ value, onChange, requireRuc }: { value: Custome
         type="button"
         onClick={() => setSearching(true)}
         className={cn(
-          'flex w-full items-center gap-3 rounded-lg p-3 text-left ring-1 transition-colors hover:bg-slate-50',
+          'pressable flex w-full items-center gap-3 rounded-lg p-3 text-left ring-1 hover:bg-slate-50',
           requireRuc && value?.documentType !== 'RUC' ? 'ring-amber-400' : 'ring-slate-200',
         )}
       >

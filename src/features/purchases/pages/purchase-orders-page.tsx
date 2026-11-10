@@ -57,7 +57,7 @@ export function PurchaseOrdersPage() {
           <Can permission={P.PurchasesCreate}>
             <Link
               to="/purchases/orders/new"
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800"
+              className="pressable inline-flex h-10 items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800"
             >
               <Plus className="size-4" /> Nueva orden
             </Link>
@@ -76,7 +76,7 @@ export function PurchaseOrdersPage() {
                 aria-selected={status === t.value}
                 onClick={() => setParam('status', t.value)}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'pressable rounded-md px-3 py-1.5 text-sm font-medium',
                   status === t.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900',
                 )}
               >

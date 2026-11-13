@@ -1,5 +1,6 @@
 import { http, HttpResponse, type AnyHandler } from 'msw'
 import { inventoryHandlers } from '@/features/inventory/mocks'
+import { purchasesHandlers } from '@/features/purchases/mocks'
 import { invalidateProductCache } from './catalog-bridge'
 import { api } from './context'
 import { resetDb } from './db'
@@ -17,4 +18,5 @@ export const handlers: AnyHandler[] = [
     return new HttpResponse(null, { status: 204 })
   }),
   ...inventoryHandlers,
+  ...purchasesHandlers,
 ]

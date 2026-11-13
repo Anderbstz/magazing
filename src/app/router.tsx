@@ -6,6 +6,7 @@ import { LoginPage } from '@/features/auth/pages/login-page'
 import { catalogRoutes } from '@/features/catalog/routes'
 import { DashboardPage } from '@/features/dashboard/dashboard-page'
 import { inventoryRoutes } from '@/features/inventory/routes'
+import { purchasesRoutes } from '@/features/purchases/routes'
 import { NotFoundPage } from './not-found-page'
 
 /**
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           ...catalogRoutes,
           ...inventoryRoutes,
+          ...purchasesRoutes,
           ...adminRoutes,
           { path: '*', element: <NotFoundPage /> },
         ],

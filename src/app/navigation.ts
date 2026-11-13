@@ -1,4 +1,4 @@
-import { Boxes, LayoutDashboard, Ruler, Tag, Tags, type LucideIcon } from 'lucide-react'
+import { Boxes, KeyRound, LayoutDashboard, Ruler, Tag, Tags, Users, type LucideIcon } from 'lucide-react'
 import { P, type Permission } from '@/config/permissions'
 
 export interface NavItem {
@@ -29,6 +29,13 @@ export const navigation: NavSection[] = [
       { to: '/catalog/categories', label: 'Categorías', icon: Tags, permission: P.CatalogRead },
       { to: '/catalog/brands', label: 'Marcas', icon: Tag, permission: P.CatalogRead },
       { to: '/catalog/units', label: 'Unidades', icon: Ruler, permission: P.CatalogRead },
+    ],
+  },
+  {
+    title: 'Administración',
+    items: [
+      { to: '/admin/users', label: 'Usuarios', icon: Users, permission: P.UsersRead },
+      { to: '/admin/roles', label: 'Roles y permisos', icon: KeyRound, permission: P.UsersRead },
     ],
   },
 ]

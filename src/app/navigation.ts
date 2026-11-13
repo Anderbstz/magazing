@@ -1,6 +1,9 @@
 import {
   ArrowLeftRight,
   ClipboardList,
+  Contact,
+  Receipt,
+  ShoppingCart,
   Boxes,
   KeyRound,
   LayoutDashboard,
@@ -21,6 +24,8 @@ export interface NavItem {
   icon: LucideIcon
   /** Si se define, el ítem solo aparece para quien tenga el permiso. */
   permission?: Permission
+  /** Resaltar solo con la ruta exacta (cuando otra opción del menú cuelga de esta ruta). */
+  end?: boolean
 }
 
 export interface NavSection {
@@ -34,7 +39,15 @@ export interface NavSection {
  */
 export const navigation: NavSection[] = [
   {
-    items: [{ to: '/', label: 'Inicio', icon: LayoutDashboard }],
+    items: [{ to: '/', label: 'Inicio', icon: LayoutDashboard, end: true }],
+  },
+  {
+    title: 'Ventas',
+    items: [
+      { to: '/sales/pos', label: 'Punto de venta', icon: ShoppingCart, permission: P.SalesCreate },
+      { to: '/sales', label: 'Ventas', icon: Receipt, permission: P.SalesRead, end: true },
+      { to: '/sales/customers', label: 'Clientes', icon: Contact, permission: P.CustomersManage },
+    ],
   },
   {
     title: 'Inventario',

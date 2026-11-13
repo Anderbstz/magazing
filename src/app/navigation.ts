@@ -3,7 +3,10 @@ import {
   BarChart3,
   BrainCircuit,
   ClipboardList,
+  Building2,
   Contact,
+  FileText,
+  Mail,
   Receipt,
   ShoppingCart,
   Boxes,
@@ -16,6 +19,7 @@ import {
   Truck,
   Users,
   Warehouse,
+  Store,
   type LucideIcon,
 } from 'lucide-react'
 import { P, type Permission } from '@/config/permissions'
@@ -87,6 +91,15 @@ export const navigation: NavSection[] = [
     items: [
       { to: '/admin/users', label: 'Usuarios', icon: Users, permission: P.UsersRead },
       { to: '/admin/roles', label: 'Roles y permisos', icon: KeyRound, permission: P.UsersRead },
+    ],
+  },
+  {
+    title: 'Configuración',
+    items: [
+      { to: '/settings/company', label: 'Empresa y sucursales', icon: Building2, permission: P.UsersManage },
+      { to: '/settings/warehouses', label: 'Almacenes', icon: Store, permission: P.WarehousesManage },
+      { to: '/settings/documents', label: 'Comprobantes y pagos', icon: FileText, permission: P.UsersManage },
+      { to: '/settings/emails', label: 'Correos', icon: Mail, permission: P.UsersManage },
     ],
   },
 ]

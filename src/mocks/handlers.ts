@@ -3,6 +3,7 @@ import { inventoryHandlers } from '@/features/inventory/mocks'
 import { purchasesHandlers } from '@/features/purchases/mocks'
 import { reportsHandlers } from '@/features/reports/mocks'
 import { salesHandlers } from '@/features/sales/mocks'
+import { settingsHandlers } from '@/features/settings/mocks'
 import { invalidateProductCache } from './catalog-bridge'
 import { api } from './context'
 import { resetDb } from './db'
@@ -19,6 +20,8 @@ export const handlers: AnyHandler[] = [
     invalidateProductCache()
     return new HttpResponse(null, { status: 204 })
   }),
+  // Primero: algunos responden variantes (?detail, ?all) y si no aplican ceden al siguiente.
+  ...settingsHandlers,
   ...inventoryHandlers,
   ...purchasesHandlers,
   ...salesHandlers,

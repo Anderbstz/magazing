@@ -14,12 +14,12 @@ export function AppShell() {
   return (
     <div className="flex min-h-full">
       {open && (
-        <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />
+        <div className="fade-in fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white ring-1 ring-slate-200 transition-transform lg:translate-x-0',
+          'drawer fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white ring-1 ring-slate-200 transition-transform duration-250 ease-drawer lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >

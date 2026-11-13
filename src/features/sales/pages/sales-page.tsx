@@ -62,7 +62,7 @@ export function SalesPage() {
         description="Historial de ventas y comprobantes emitidos."
         actions={
           <Can permission={P.SalesCreate}>
-            <Link to="/sales/pos" className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800">
+            <Link to="/sales/pos" className="pressable inline-flex h-10 items-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-medium text-white hover:bg-brand-800">
               <Plus className="size-4" /> Nueva venta
             </Link>
           </Can>

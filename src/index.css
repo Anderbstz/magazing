@@ -12,6 +12,23 @@
   --color-brand-700: #0f766e;
   --color-brand-800: #115e59;
   --color-brand-900: #134e4a;
+
+  /* Curvas de movimiento (guía de Emil Kowalski): las de CSS por defecto son demasiado blandas. */
+  --ease-snappy: cubic-bezier(0.23, 1, 0.32, 1); /* entradas y respuestas de UI */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* paneles laterales */
+}
+
+/*
+ * Todo lo que se presiona (botones, pestañas, chips) se encoge un poco al hacer clic:
+ * confirma que la interfaz escuchó. Solo transiciona propiedades concretas, nunca `all`.
+ */
+@utility pressable {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-snappy);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
 }
 
 @layer base {
@@ -28,6 +45,72 @@
   /* Los números de tablas y montos se alinean mejor con cifras tabulares. */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+/*
+ * Modales: aparecen con una escala leve + opacidad (nunca desde scale(0)) en 200 ms.
+ * Se quedan centrados: un modal no sale de un disparador concreto. Al cerrar desaparecen
+ * al instante (la salida debe ser más rápida que la entrada).
+ */
+.dialog-panel[open] {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 200ms var(--ease-snappy),
+    transform 200ms var(--ease-snappy);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.dialog-panel[open]::backdrop {
+  background-color: rgb(15 23 42 / 0.4);
+  transition: background-color 200ms ease-out;
+
+  @starting-style {
+    background-color: rgb(15 23 42 / 0);
+  }
+}
+
+/* Fondo del menú móvil: se funde en vez de aparecer de golpe. */
+.fade-in {
+  opacity: 1;
+  transition: opacity 200ms ease-out;
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+/* Momentos poco frecuentes (venta registrada): aquí sí cabe un poco de deleite. */
+.pop-in {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 300ms var(--ease-snappy),
+    transform 300ms var(--ease-snappy);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+/* Movimiento reducido: menos y más suave, no cero. Se quitan los desplazamientos y escalas; la opacidad se queda. */
+@media (prefers-reduced-motion: reduce) {
+  .dialog-panel[open] {
+    transform: none;
+    transition: opacity 150ms ease-out;
+  }
+  .pressable:active:not(:disabled),
+  .pop-in {
+    transform: none;
+  }
+  .drawer {
+    transition-duration: 0ms !important;
   }
 }
 

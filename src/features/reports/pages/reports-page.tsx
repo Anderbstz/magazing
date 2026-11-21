@@ -1,5 +1,6 @@
-import { Download, Receipt, TrendingUp, Wallet } from 'lucide-react'
+import { Download, FileSpreadsheet, Receipt, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
+import { DownloadButton } from '@/components/download-button'
 import { PageHeader } from '@/components/page-header'
 import { StatCard } from '@/components/stat-card'
 import { Button } from '@/components/ui/button'
@@ -62,9 +63,19 @@ export function ReportsPage() {
         title="Reportes"
         description="Ventas, utilidad y productos más vendidos. Las ventas anuladas no se cuentan."
         actions={
-          <Button variant="secondary" onClick={exportCsv} disabled={!report.data?.rows.length}>
-            <Download className="size-4" /> Exportar CSV
-          </Button>
+          <>
+            <Button variant="secondary" onClick={exportCsv} disabled={!report.data?.rows.length}>
+              <Download className="size-4" /> Exportar CSV
+            </Button>
+            <DownloadButton
+              path="/reports/sales/export"
+              params={{ from, to, groupBy }}
+              fallbackName={`ventas_${from}_${to}.xlsx`}
+              disabled={!report.data?.rows.length}
+            >
+              <FileSpreadsheet className="size-4" /> Exportar Excel
+            </DownloadButton>
+          </>
         }
       />
 

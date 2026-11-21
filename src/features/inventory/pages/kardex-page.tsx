@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Plus, X } from 'lucide-react'
+import { FileSpreadsheet, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { DownloadButton } from '@/components/download-button'
 import { PageHeader } from '@/components/page-header'
 import { ProductPicker } from '@/components/product-picker'
 import { Badge } from '@/components/ui/badge'
@@ -70,11 +71,20 @@ export function KardexPage() {
         title="Kardex"
         description="Cada entrada y salida de inventario. El saldo y el costo promedio se registran en cada movimiento."
         actions={
-          <Can permission={P.InventoryAdjust}>
-            <Button onClick={() => setAdjustOpen(true)}>
-              <Plus className="size-4" /> Ajuste
-            </Button>
-          </Can>
+          <>
+            <DownloadButton
+              path="/inventory/movements/export"
+              params={{ productId, warehouseId, type, from, to }}
+              fallbackName="kardex.xlsx"
+            >
+              <FileSpreadsheet className="size-4" /> Exportar Excel
+            </DownloadButton>
+            <Can permission={P.InventoryAdjust}>
+              <Button onClick={() => setAdjustOpen(true)}>
+                <Plus className="size-4" /> Ajuste
+              </Button>
+            </Can>
+          </>
         }
       />
 

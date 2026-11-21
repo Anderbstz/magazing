@@ -1,6 +1,7 @@
-import { Plus, Printer, Search } from 'lucide-react'
+import { FileDown, Plus, Printer, Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
+import { DownloadButton } from '@/components/download-button'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -183,6 +184,9 @@ function SaleDialog({ id, onClose }: { id: string; onClose: () => void }) {
           <Button variant="secondary" onClick={() => window.print()} disabled={!s}>
             <Printer className="size-4" /> Reimprimir
           </Button>
+          <DownloadButton path={`/sales/${id}/pdf`} fallbackName={`${s?.fullNumber ?? 'comprobante'}.pdf`} disabled={!s}>
+            <FileDown className="size-4" /> Descargar PDF
+          </DownloadButton>
         </>
       }
     >

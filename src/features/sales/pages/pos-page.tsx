@@ -1,6 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, Banknote, CheckCircle2, CreditCard, Minus, Plus, Printer, ShoppingCart, Smartphone, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Banknote, CheckCircle2, CreditCard, FileDown, Minus, Plus, Printer, ShoppingCart, Smartphone, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
+import { DownloadButton } from '@/components/download-button'
 import { ProductPicker } from '@/components/product-picker'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -413,6 +414,9 @@ function SaleCompletedDialog({ sale, onNew }: { sale: SaleDetail; onNew: () => v
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="size-4" /> Imprimir
           </Button>
+          <DownloadButton path={`/sales/${sale.saleId}/pdf`} fallbackName={`${sale.fullNumber}.pdf`}>
+            <FileDown className="size-4" /> PDF
+          </DownloadButton>
           <Button autoFocus onClick={onNew}>
             Nueva venta
           </Button>

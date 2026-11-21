@@ -1,6 +1,7 @@
-import { AlertTriangle, Boxes, PackageX, Plus, ScrollText, Search, SlidersHorizontal, Wallet } from 'lucide-react'
+import { AlertTriangle, Boxes, FileSpreadsheet, PackageX, Plus, ScrollText, Search, SlidersHorizontal, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
+import { DownloadButton } from '@/components/download-button'
 import { PageHeader } from '@/components/page-header'
 import { StatCard } from '@/components/stat-card'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,14 @@ export function StockPage() {
         actions={
           <>
             <WarehouseSelect value={warehouseId} onChange={(id) => setParam('warehouseId', id)} className="w-64" />
+            <DownloadButton
+              path="/stocks/export"
+              params={{ warehouseId, status: status || undefined }}
+              fallbackName="stock.xlsx"
+              disabled={!warehouseId}
+            >
+              <FileSpreadsheet className="size-4" /> Exportar Excel
+            </DownloadButton>
             <Can permission={P.InventoryAdjust}>
               <Button onClick={() => openAdjust(null)}>
                 <Plus className="size-4" /> Ajuste

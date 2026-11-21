@@ -15,9 +15,15 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return <textarea className={cn(base, 'min-h-20 py-2', className)} {...props} />
 }
 
+/**
+ * `<select>` nativo con estilo propio (ver `.select-ui` en index.css). Se mantiene nativo:
+ * accesible, funciona con teclado y lector de pantalla, abre el selector del sistema en móvil
+ * y se registra directo con react-hook-form. En navegadores con `appearance: base-select`
+ * (Chrome/Edge 135+) también se estiliza la lista abierta; en el resto se ve la del sistema.
+ */
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(base, 'h-10 pr-8', className)} {...props}>
+    <select className={cn(base, 'select-ui h-10 cursor-pointer pr-9 hover:ring-slate-400', className)} {...props}>
       {children}
     </select>
   )

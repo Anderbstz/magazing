@@ -32,7 +32,7 @@ export function Dialog({ open, onClose, title, description, size = 'md', childre
         if (e.target === ref.current) onClose()
       }}
       className={cn(
-        'm-auto w-[calc(100%-2rem)] rounded-xl bg-white p-0 shadow-xl backdrop:bg-slate-900/40',
+        'dialog-panel m-auto w-[calc(100%-2rem)] rounded-xl bg-white p-0 shadow-xl',
         size === 'md' ? 'max-w-lg' : 'max-w-3xl',
       )}
     >
@@ -46,7 +46,7 @@ export function Dialog({ open, onClose, title, description, size = 'md', childre
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="pressable rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               aria-label="Cerrar"
             >
               <X className="size-5" />

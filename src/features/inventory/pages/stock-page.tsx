@@ -106,7 +106,7 @@ export function StockPage() {
                 aria-selected={status === t.value}
                 onClick={() => setParam('status', t.value)}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'pressable rounded-md px-3 py-1.5 text-sm font-medium',
                   status === t.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900',
                 )}
               >

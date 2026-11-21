@@ -65,7 +65,7 @@ export function PurchaseOrderPage() {
             {actions.edit && (
               <Link
                 to={`/purchases/orders/${po.purchaseOrderId}/edit`}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-slate-800 ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+                className="pressable inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-slate-800 ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
               >
                 <Pencil className="size-4" /> Editar
               </Link>

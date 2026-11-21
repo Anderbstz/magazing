@@ -1,5 +1,5 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, Banknote, CreditCard, Minus, Plus, Printer, ShoppingCart, Smartphone, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Banknote, CheckCircle2, CreditCard, Minus, Plus, Printer, ShoppingCart, Smartphone, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { ProductPicker } from '@/components/product-picker'
 import { Button } from '@/components/ui/button'
@@ -255,7 +255,7 @@ function PointOfSale({ onCompleted }: { onCompleted: (sale: SaleDetail) => void 
                   if (type === 'FACTURA' && customerChoice?.documentType !== 'RUC') setCustomer(null)
                 }}
                 className={cn(
-                  'rounded-md py-1.5 text-sm font-medium transition-colors',
+                  'pressable rounded-md py-1.5 text-sm font-medium',
                   documentType === type ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600',
                 )}
               >
@@ -373,7 +373,7 @@ function PaymentEditor({
               onClick={() => onChange({ methodId: m.paymentMethodId })}
               aria-pressed={m.paymentMethodId === payment.methodId}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 transition-colors',
+                'pressable inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1',
                 m.paymentMethodId === payment.methodId ? 'bg-brand-50 text-brand-800 ring-brand-500' : 'text-slate-600 ring-slate-200 hover:bg-slate-50',
               )}
             >
@@ -419,6 +419,9 @@ function SaleCompletedDialog({ sale, onNew }: { sale: SaleDetail; onNew: () => v
         </>
       }
     >
+      <div className="pop-in mb-4 flex justify-center" aria-hidden>
+        <CheckCircle2 className="size-12 text-emerald-600" strokeWidth={1.75} />
+      </div>
       {sale.change > 0 && (
         <div className="mb-4 rounded-lg bg-emerald-50 p-4 text-center text-emerald-900 ring-1 ring-emerald-200">
           <p className="text-sm">Vuelto a entregar</p>

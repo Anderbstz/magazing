@@ -4,9 +4,9 @@ import { adminRoutes } from '@/features/admin/routes'
 import { RequireAuth } from '@/features/auth/guards'
 import { LoginPage } from '@/features/auth/pages/login-page'
 import { catalogRoutes } from '@/features/catalog/routes'
-import { DashboardPage } from '@/features/dashboard/dashboard-page'
 import { inventoryRoutes } from '@/features/inventory/routes'
 import { purchasesRoutes } from '@/features/purchases/routes'
+import { reportsRoutes } from '@/features/reports/routes'
 import { salesRoutes } from '@/features/sales/routes'
 import { NotFoundPage } from './not-found-page'
 
@@ -21,11 +21,15 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          {
+            index: true,
+            lazy: async () => ({ Component: (await import('@/features/dashboard/dashboard-page')).DashboardPage }),
+          },
           ...catalogRoutes,
           ...salesRoutes,
           ...inventoryRoutes,
           ...purchasesRoutes,
+          ...reportsRoutes,
           ...adminRoutes,
           { path: '*', element: <NotFoundPage /> },
         ],

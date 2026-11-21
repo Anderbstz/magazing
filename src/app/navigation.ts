@@ -1,5 +1,7 @@
 import {
   ArrowLeftRight,
+  BarChart3,
+  BrainCircuit,
   ClipboardList,
   Contact,
   Receipt,
@@ -62,6 +64,13 @@ export const navigation: NavSection[] = [
     items: [
       { to: '/purchases/orders', label: 'Órdenes de compra', icon: ClipboardList, permission: P.PurchasesRead },
       { to: '/purchases/suppliers', label: 'Proveedores', icon: Truck, permission: P.SuppliersManage },
+    ],
+  },
+  {
+    title: 'Análisis',
+    items: [
+      { to: '/reports', label: 'Reportes', icon: BarChart3, permission: P.ReportsRead },
+      { to: '/forecast', label: 'Predicción y alertas', icon: BrainCircuit, permission: P.InventoryRead },
     ],
   },
   {

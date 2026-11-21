@@ -13,6 +13,9 @@ Panel web de **Magazing** (inventario y ventas para pymes). Consume la API REST 
 | Formularios | react-hook-form + zod |
 | HTTP | axios (cliente único en `src/api/http.ts`) |
 | Íconos / avisos | lucide-react / sonner |
+| Gráficos | Recharts |
+| Datos simulados (solo dev) | MSW |
+| Tests | Vitest |
 
 ## Puesta en marcha
 
@@ -39,6 +42,7 @@ Usuario de desarrollo: el que crea `backend/database/02_seed.sql` (ver comentari
 | `npm run typecheck` | Solo revisa tipos |
 | `npm run lint` | oxlint |
 | `npm run preview` | Sirve el build localmente |
+| `npm test` | Tests unitarios (Vitest) |
 
 ## Estructura
 
@@ -76,8 +80,9 @@ features/<modulo>/
 
 ## Ramas
 
-- `main`: estructura base (esta).
-- `feature/<modulo>`: un módulo por rama.
+- `main`: estructura base.
+- `feature/<modulo>`: un módulo por rama, apiladas en este orden (cada una sale de la anterior):
+  `auth` → `catalog` → `admin` → `mocks` → `inventory` → `purchases` → `sales` → `dashboard`.
 
 ## Producción
 
@@ -85,3 +90,34 @@ features/<modulo>/
 2. `npm run build` y publica `dist/` en Cloudflare Pages o Vercel.
 3. Configura el fallback de SPA (todas las rutas → `index.html`). En Cloudflare Pages lo hace `public/_redirects`.
 4. En el backend, habilita **CORS** para el dominio del frontend.
+
+## Datos simulados (MSW)
+
+El backend todavía no expone inventario, compras, ventas ni reportes. Para terminar el frontend
+sin esperar, en **desarrollo** esos endpoints los responde [MSW](https://mswjs.io) desde el navegador:
+
+- Lo que no está simulado (login, catálogo, usuarios, roles) va al backend real.
+- Los datos simulados usan **tus productos reales** del catálogo y generan ~16 semanas de historia
+  (ventas, compras, transferencias) con las mismas reglas del MVP: kardex, costo promedio ponderado,
+  stock no negativo, IGV incluido, correlativos por serie y factura solo con RUC.
+- Se guardan en `localStorage`; el botón **Reiniciar datos** del menú lateral los regenera.
+- Apagar: `VITE_MOCKS=off` en `.env.local`. En producción MSW no entra al bundle.
+
+Cuando el backend implemente un endpoint, se borra su handler en `src/features/<modulo>/mocks.ts`
+y el frontend sigue igual. Los tipos de `src/features/<modulo>/api.ts` son el contrato que deben
+cumplir los DTO de .NET (JSON en camelCase, listas paginadas con `PagedResult`, errores `{ "error": "..." }`).
+
+| Módulo | Endpoints simulados |
+|---|---|
+| Inventario | `GET /warehouses` · `GET /stocks` · `GET /stocks/summary` · `GET /inventory/movements` · `POST /inventory/adjustments` · `GET/POST /transfers` · `GET /transfers/{id}` · `POST /transfers/{id}/complete` · `POST /transfers/{id}/cancel` |
+| Compras | `GET/POST /suppliers` · `PUT /suppliers/{id}` · `GET/POST /purchase-orders` · `GET/PUT /purchase-orders/{id}` · `POST /purchase-orders/{id}/approve` · `.../receive` · `.../cancel` |
+| Ventas | `GET /payment-methods` · `GET/POST /customers` · `PUT /customers/{id}` · `GET/POST /sales` · `GET /sales/{id}` · `POST /sales/{id}/cancel` |
+| Reportes y ML | `GET /reports/dashboard` · `GET /reports/sales` · `GET /reports/top-products` · `GET /predictions` · `POST /predictions/run` · `GET /alerts` · `POST /alerts/{id}/acknowledge` · `POST /alerts/{id}/resolve` |
+
+## Tests
+
+```bash
+npm test
+```
+
+Cubren el cálculo de IGV y las reglas de la base simulada (kardex, costo promedio, correlativos, RUC en factura).

@@ -13,6 +13,7 @@ import {
   type MockDb,
   type MovementCode,
   type TransferRec,
+  toLocalDate,
 } from '@/mocks/db'
 import { contains, handle, notFound, paginate, query } from '@/mocks/utils'
 import type { Movement, StockItem, StockStatus, TransferDetail, TransferSummary } from './api'
@@ -138,8 +139,9 @@ export const inventoryHandlers = [
             (!productId || m.productId === productId) &&
             (!warehouseId || m.warehouseId === warehouseId) &&
             (!type || m.movementTypeCode === type) &&
-            (!from || m.createdAt.slice(0, 10) >= from) &&
-            (!to || m.createdAt.slice(0, 10) <= to),
+            // Filtro por día local (Perú es UTC-5): una venta de las 9 p. m. es de hoy, no de mañana.
+            (!from || toLocalDate(new Date(m.createdAt)) >= from) &&
+            (!to || toLocalDate(new Date(m.createdAt)) <= to),
         )
         .map((m) => {
           const p = productMap.get(m.productId)

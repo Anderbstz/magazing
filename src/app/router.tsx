@@ -7,6 +7,7 @@ import { catalogRoutes } from '@/features/catalog/routes'
 import { DashboardPage } from '@/features/dashboard/dashboard-page'
 import { inventoryRoutes } from '@/features/inventory/routes'
 import { purchasesRoutes } from '@/features/purchases/routes'
+import { salesRoutes } from '@/features/sales/routes'
 import { NotFoundPage } from './not-found-page'
 
 /**
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           ...catalogRoutes,
+          ...salesRoutes,
           ...inventoryRoutes,
           ...purchasesRoutes,
           ...adminRoutes,

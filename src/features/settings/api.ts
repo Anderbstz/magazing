@@ -1,7 +1,6 @@
 /**
  * Contrato de configuración: empresa, sucursales, almacenes, series de comprobantes,
  * métodos de pago, bandeja de correos y cambio de contraseña.
- * Aún sin backend: en desarrollo responde MSW (ver ./mocks.ts).
  */
 import { http } from '@/api/http'
 import type { Guid, IsoDate, PagedResult, PageParams } from '@/api/types'

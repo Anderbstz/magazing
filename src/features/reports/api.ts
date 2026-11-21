@@ -1,6 +1,6 @@
 /**
- * Contrato de reportes, predicción de demanda y alertas (aún sin backend: en desarrollo
- * responde MSW, ver ./mocks.ts). Regla 11: predicción semanal por producto; si el stock
+ * Contrato de reportes, predicción de demanda y alertas con la API .NET.
+ * Regla 11: predicción semanal por producto; si el stock
  * no alcanza para la demanda predicha se abre una alerta.
  */
 import { http } from '@/api/http'

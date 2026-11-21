@@ -1,5 +1,5 @@
 /**
- * Contrato del módulo de ventas (aún sin backend: en desarrollo responde MSW, ver ./mocks.ts).
+ * Contrato del módulo de ventas con la API .NET.
  * Regla 6: la venta valida stock, calcula IGV (precios con IGV incluido), descuenta stock,
  * genera comprobante con serie y correlativo y registra los pagos.
  * Regla 7: la FACTURA exige cliente con RUC; la BOLETA acepta DNI o "CLIENTES VARIOS".

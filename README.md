@@ -152,12 +152,29 @@ Los permisos llegan en el login (claims del JWT) y se renuevan con el refresh to
 
 `src/api/download.ts` pide el archivo con el token de la sesión, toma el nombre de `Content-Disposition` y muestra el mensaje real del backend si falla. En las pantallas se usa `<DownloadButton path=... params=... fallbackName=...>`.
 
-## Producción (Render, Static Site)
+## Producción (Docker en Render)
 
-1. **Build command:** `npm ci && npm run build`. **Publish directory:** `dist`.
-2. Definir `VITE_API_URL` con la URL pública de la API.
-3. Agregar una regla **Rewrite** de `/*` a `/index.html`, para que las rutas de React no den 404 al recargar (`public/_redirects` hace lo mismo en Cloudflare Pages y Netlify).
-4. En el backend, habilitar **CORS** para el dominio del frontend y **exponer la cabecera `Content-Disposition`**, para que las descargas usen el nombre que manda el servidor.
+La imagen tiene dos etapas: **Node 22** compila la SPA y **nginx** sirve `dist/`.
+
+| Archivo | Para qué |
+|---|---|
+| `Dockerfile` | Compila con `npm ci && npm run build` y copia `dist/` a nginx |
+| `nginx.conf.template` | Escucha en `${PORT}` (Render lo asigna), fallback de SPA a `index.html`, caché larga para `/assets` y sin caché para `index.html` |
+| `.dockerignore` | Deja fuera `node_modules`, `dist` y los `.env` locales |
+
+**En Render** (*New → Web Service → Docker*, rama con el `Dockerfile`):
+
+1. Variable de entorno `VITE_API_URL` = URL pública de la API, sin barra final. Render la pasa como *build arg*, así que queda incrustada al compilar: si cambia, hay que volver a desplegar.
+2. No hace falta configurar el puerto: nginx escucha en el `PORT` que pone Render.
+
+**Probar la imagen en local:**
+
+```bash
+docker build --build-arg VITE_API_URL=http://localhost:5261 -t magazing-web .
+docker run --rm -p 8080:8080 magazing-web   # http://localhost:8080
+```
+
+En el backend hay que habilitar **CORS** para el dominio del frontend y **exponer la cabecera `Content-Disposition`**, para que las descargas usen el nombre que manda el servidor.
 
 ## Tests
 

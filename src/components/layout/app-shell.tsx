@@ -1,6 +1,6 @@
 import { LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { navigation } from '@/app/navigation'
 import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
@@ -118,13 +118,15 @@ function UserFooter() {
 
   return (
     <div className="flex items-center gap-3 border-t border-slate-200 p-4">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600 uppercase">
-        {user.username.slice(0, 2)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-800">{user.username}</p>
-        <p className="truncate text-xs text-slate-500">{user.roles.join(', ') || 'Sin rol'}</p>
-      </div>
+      <Link to="/profile" className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 -m-1 hover:bg-slate-50" title="Mi perfil">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600 uppercase">
+          {user.username.slice(0, 2)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-slate-800">{user.username}</p>
+          <p className="truncate text-xs text-slate-500">{user.roles.join(', ') || 'Sin rol'}</p>
+        </div>
+      </Link>
       <button
         type="button"
         onClick={handleLogout}

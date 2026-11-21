@@ -8,6 +8,7 @@ import { inventoryRoutes } from '@/features/inventory/routes'
 import { purchasesRoutes } from '@/features/purchases/routes'
 import { reportsRoutes } from '@/features/reports/routes'
 import { salesRoutes } from '@/features/sales/routes'
+import { settingsRoutes } from '@/features/settings/routes'
 import { NotFoundPage } from './not-found-page'
 
 /**
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           ...purchasesRoutes,
           ...reportsRoutes,
           ...adminRoutes,
+          ...settingsRoutes,
           { path: '*', element: <NotFoundPage /> },
         ],
       },

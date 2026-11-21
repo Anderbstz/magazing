@@ -21,8 +21,47 @@ import { badRequest, newId, notFound, seededRandom, type MockUser } from './util
 
 // ── Tablas ───────────────────────────────────────────────────────────────────
 
+export interface CompanyRec {
+  companyId: string
+  ruc: string
+  businessName: string
+  tradeName: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  logoUrl: string | null
+}
+
+export interface BranchRec {
+  branchId: string
+  code: string
+  name: string
+  address: string | null
+  phone: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export type EmailStatus = 'PENDING' | 'SENT' | 'FAILED'
+export type EmailTemplate = 'WELCOME' | 'INVOICE' | 'STOCK_ALERT' | 'PASSWORD_RESET'
+
+/** `email_outbox`: el BackgroundService del backend los envía con Resend y reintenta. */
+export interface EmailRec {
+  emailOutboxId: string
+  toEmail: string
+  subject: string
+  htmlBody: string
+  template: EmailTemplate
+  status: EmailStatus
+  attempts: number
+  lastError: string | null
+  createdAt: string
+  sentAt: string | null
+}
+
 export interface WarehouseRec {
   warehouseId: string
+  branchId: string
   code: string
   name: string
   address: string | null
@@ -151,6 +190,7 @@ export type InvoiceType = 'BOLETA' | 'FACTURA'
 
 export interface DocumentSeriesRec {
   documentSeriesId: string
+  branchId: string
   documentType: InvoiceType
   series: string
   currentNumber: number
@@ -233,6 +273,9 @@ export interface AlertRec {
 
 export interface MockDb {
   version: number
+  company: CompanyRec | null
+  branches: BranchRec[]
+  emails: EmailRec[]
   warehouses: WarehouseRec[]
   stocks: StockRec[]
   /** `products.average_cost` simulado: el real no cambia porque las compras no llegan al backend. */
@@ -253,7 +296,8 @@ export interface MockDb {
 // ── Persistencia ─────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'magazing.mockdb'
-const VERSION = 1
+// v2: empresa, sucursales y bandeja de correos. Subir la versión regenera los datos.
+const VERSION = 2
 
 let db: MockDb | null = null
 /** Mientras se siembra el historial no se guarda en cada operación (serían cientos de escrituras). */
@@ -262,6 +306,9 @@ let suspendSave = false
 function emptyDb(): MockDb {
   return {
     version: VERSION,
+    company: null,
+    branches: [],
+    emails: [],
     warehouses: [],
     stocks: [],
     productCosts: {},
@@ -439,6 +486,58 @@ function assertStock(d: MockDb, warehouseId: string, lines: { productId: string;
     const available = stockOf(d, productId, warehouseId)
     if (available < quantity) throw badRequest(`Stock insuficiente de ${name}: hay ${available} y se piden ${quantity}.`)
   }
+}
+
+// ── Correos (regla 10) ───────────────────────────────────────────────────────
+
+export function enqueueEmail(
+  d: MockDb,
+  input: { to: string; subject: string; template: EmailTemplate; html: string },
+  at = new Date().toISOString(),
+  outcome: { status: EmailStatus; attempts: number; error?: string } = { status: 'PENDING', attempts: 0 },
+) {
+  d.emails.push({
+    emailOutboxId: newId(),
+    toEmail: input.to,
+    subject: input.subject,
+    htmlBody: input.html,
+    template: input.template,
+    status: outcome.status,
+    attempts: outcome.attempts,
+    lastError: outcome.error ?? null,
+    createdAt: at,
+    sentAt: outcome.status === 'SENT' ? new Date(new Date(at).getTime() + 4000).toISOString() : null,
+  })
+}
+
+/** En el historial sembrado los correos ya se procesaron: los de dominio `.test` fallaron. */
+function seedOutcome(to: string): { status: EmailStatus; attempts: number; error?: string } {
+  return to.endsWith('.test')
+    ? { status: 'FAILED', attempts: 3, error: 'Resend 403: el dominio del destinatario no está verificado.' }
+    : { status: 'SENT', attempts: 1 }
+}
+
+/**
+ * Imita al BackgroundService: los correos pendientes con más de unos segundos se "envían".
+ * Las direcciones de prueba que no existen fallan como lo haría Resend sin dominio verificado.
+ */
+export function processOutbox(d: MockDb) {
+  const now = Date.now()
+  let changed = false
+  for (const e of d.emails) {
+    if (e.status !== 'PENDING' || now - new Date(e.createdAt).getTime() < 6000) continue
+    e.attempts += 1
+    if (e.toEmail.endsWith('.test')) {
+      e.status = e.attempts >= 3 ? 'FAILED' : 'PENDING'
+      e.lastError = 'Resend 403: el dominio del destinatario no está verificado.'
+    } else {
+      e.status = 'SENT'
+      e.sentAt = new Date().toISOString()
+      e.lastError = null
+    }
+    changed = true
+  }
+  if (changed) save()
 }
 
 // ── Ajustes (regla 9) ────────────────────────────────────────────────────────
@@ -793,6 +892,19 @@ export function createSale(d: MockDb, products: Map<string, Product>, user: Mock
     },
   }
   d.sales.push(sale)
+  if (customer.email) {
+    enqueueEmail(
+      d,
+      {
+        to: customer.email,
+        subject: `Tu ${input.documentType === 'FACTURA' ? 'factura' : 'boleta'} ${fullNumber} de Magazing`,
+        template: 'INVOICE',
+        html: `<p>Hola ${customer.fullName}, adjuntamos tu comprobante ${fullNumber} por S/ ${totals.total.toFixed(2)}.</p>`,
+      },
+      at,
+      suspendSave ? seedOutcome(customer.email) : undefined,
+    )
+  }
   save()
   return sale
 }
@@ -959,6 +1071,17 @@ export function runPredictions(d: MockDb, products: Product[]) {
           resolvedAt: null,
           resolvedByName: null,
         })
+        enqueueEmail(
+          d,
+          {
+            to: d.company?.email ?? 'contacto@magazing.pe',
+            subject: `Alerta de stock: ${p.name}`,
+            template: 'STOCK_ALERT',
+            html: `<p>${p.name}: stock ${stock}, umbral ${round3(c.threshold)}. Sugerido pedir ${c.suggested}.</p>`,
+          },
+          now,
+          suspendSave ? seedOutcome(d.company?.email ?? '') : undefined,
+        )
         created++
       } else if (c.active && open) {
         open.currentStock = stock
@@ -980,9 +1103,24 @@ export function runPredictions(d: MockDb, products: Product[]) {
 /** Catálogos fijos, iguales a `02_seed.sql` (más un segundo almacén para probar transferencias). */
 function seedStatic(d: MockDb) {
   const created = new Date(Date.now() - 120 * 86_400_000).toISOString()
+  d.company = {
+    companyId: newId(),
+    ruc: '20123456789',
+    businessName: 'MAGAZING S.A.C.',
+    tradeName: 'Magazing',
+    address: 'Av. Ejercito 123, Arequipa',
+    phone: '054123456',
+    email: 'contacto@magazing.pe',
+    logoUrl: null,
+  }
+  d.branches = [
+    { branchId: newId(), code: 'PRI', name: 'Tienda Principal', address: 'Av. Ejercito 123, Arequipa', phone: '054123456', isActive: true, createdAt: created },
+    { branchId: newId(), code: 'CAY', name: 'Tienda Cayma', address: 'Av. Cayma 450, Arequipa', phone: null, isActive: true, createdAt: created },
+  ]
+  const [pri, cay] = d.branches
   d.warehouses = [
-    { warehouseId: newId(), code: 'ALM01', name: 'Almacen Principal', address: 'Av. Ejercito 123, Arequipa', isActive: true },
-    { warehouseId: newId(), code: 'ALM02', name: 'Almacen Tienda Cayma', address: 'Av. Cayma 450, Arequipa', isActive: true },
+    { warehouseId: newId(), branchId: pri.branchId, code: 'ALM01', name: 'Almacen Principal', address: 'Av. Ejercito 123, Arequipa', isActive: true },
+    { warehouseId: newId(), branchId: cay.branchId, code: 'ALM02', name: 'Almacen Tienda Cayma', address: 'Av. Cayma 450, Arequipa', isActive: true },
   ]
   d.paymentMethods = [
     ['CASH', 'Efectivo'],
@@ -992,8 +1130,8 @@ function seedStatic(d: MockDb) {
     ['TRANSFER', 'Transferencia bancaria'],
   ].map(([code, name]) => ({ paymentMethodId: newId(), code, name, isActive: true }))
   d.documentSeries = [
-    { documentSeriesId: newId(), documentType: 'BOLETA', series: 'B001', currentNumber: 0, isActive: true },
-    { documentSeriesId: newId(), documentType: 'FACTURA', series: 'F001', currentNumber: 0, isActive: true },
+    { documentSeriesId: newId(), branchId: pri.branchId, documentType: 'BOLETA', series: 'B001', currentNumber: 0, isActive: true },
+    { documentSeriesId: newId(), branchId: pri.branchId, documentType: 'FACTURA', series: 'F001', currentNumber: 0, isActive: true },
   ]
   const customer = (documentType: DocumentType, documentNumber: string, fullName: string, email: string | null = null): CustomerRec => ({
     customerId: newId(),
@@ -1011,7 +1149,7 @@ function seedStatic(d: MockDb) {
     customer('DNI', '45879632', 'María Quispe Huamán', 'maria.quispe@gmail.com'),
     customer('DNI', '70214589', 'Luis Mamani Condori'),
     customer('RUC', '20456789123', 'Bodega El Misti E.I.R.L.', 'compras@elmisti.pe'),
-    customer('RUC', '10457896321', 'Rosa Apaza Ccama'),
+    customer('RUC', '10457896321', 'Rosa Apaza Ccama', 'rosa.apaza@correo.test'),
   ]
   const supplier = (ruc: string, businessName: string, contactName: string, email: string, phone: string): SupplierRec => ({
     supplierId: newId(),
@@ -1180,4 +1318,18 @@ function seedHistory(d: MockDb, products: Product[]) {
   }
 
   runPredictions(d, products)
+
+  // Correo de bienvenida del usuario admin (plantilla WELCOME), el más antiguo de la bandeja.
+  d.emails.unshift({
+    emailOutboxId: newId(),
+    toEmail: 'admin@magazing.pe',
+    subject: 'Bienvenido a Magazing',
+    htmlBody: '<p>Tu cuenta de administrador está lista.</p>',
+    template: 'WELCOME',
+    status: 'SENT',
+    attempts: 1,
+    lastError: null,
+    createdAt: dayAt(days + 1, 9),
+    sentAt: dayAt(days + 1, 9, 1),
+  })
 }

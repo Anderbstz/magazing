@@ -144,3 +144,28 @@ describe('reglas de negocio', () => {
     ).toThrow(/motivo/)
   })
 })
+
+describe('correos (regla 10)', () => {
+  it('la venta a un cliente con correo encola su comprobante', () => {
+    const maria = d.customers.find((c) => c.email === 'maria.quispe@gmail.com')!
+    const before = d.emails.length
+    const sale = createSale(d, productMap, user, {
+      warehouseId: d.warehouses[0].warehouseId,
+      customerId: maria.customerId,
+      documentType: 'BOLETA',
+      notes: null,
+      items: [{ productId: 'pan', quantity: 1, discount: 0 }],
+      payments: [{ paymentMethodId: d.paymentMethods[0].paymentMethodId, amount: 1, reference: null }],
+    })
+    expect(d.emails.length).toBe(before + 1)
+    const email = d.emails.at(-1)!
+    expect(email).toMatchObject({ toEmail: 'maria.quispe@gmail.com', template: 'INVOICE', status: 'PENDING' })
+    expect(email.subject).toContain(sale.invoice.fullNumber)
+  })
+
+  it('en el historial, los correos a dominios .test quedaron fallidos tras 3 intentos', () => {
+    const failed = d.emails.filter((e) => e.toEmail.endsWith('.test'))
+    expect(failed.length).toBeGreaterThan(0)
+    expect(failed.every((e) => e.status === 'FAILED' && e.attempts === 3)).toBe(true)
+  })
+})

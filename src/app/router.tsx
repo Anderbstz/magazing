@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/layout/app-shell'
 import { RequireAuth } from '@/features/auth/guards'
 import { LoginPage } from '@/features/auth/pages/login-page'
+import { catalogRoutes } from '@/features/catalog/routes'
 import { DashboardPage } from '@/features/dashboard/dashboard-page'
 import { NotFoundPage } from './not-found-page'
 
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <DashboardPage /> },
+          ...catalogRoutes,
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -6,6 +6,7 @@ import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { queryClient } from '@/lib/query-client'
 import { cn } from '@/lib/utils'
+import { MocksNotice } from './mocks-notice'
 
 export function AppShell() {
   const [open, setOpen] = useState(false)
@@ -38,6 +39,7 @@ export function AppShell() {
         </div>
         {/* En móvil, el menú se cierra al elegir una opción. */}
         <SidebarNav onNavigate={() => setOpen(false)} />
+        <MocksNotice />
         <UserFooter />
       </aside>
 

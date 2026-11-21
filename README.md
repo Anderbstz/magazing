@@ -82,7 +82,7 @@ features/<modulo>/
 
 - `main`: estructura base.
 - `feature/<modulo>`: un módulo por rama, apiladas en este orden (cada una sale de la anterior):
-  `auth` → `catalog` → `admin` → `mocks` → `inventory` → `purchases` → `sales` → `dashboard`.
+  `auth` → `catalog` → `admin` → `mocks` → `inventory` → `purchases` → `sales` → `dashboard` → `polish` → `settings` → `login`.
 
 ## Producción
 
@@ -112,6 +112,7 @@ cumplir los DTO de .NET (JSON en camelCase, listas paginadas con `PagedResult`, 
 | Inventario | `GET /warehouses` · `GET /stocks` · `GET /stocks/summary` · `GET /inventory/movements` · `POST /inventory/adjustments` · `GET/POST /transfers` · `GET /transfers/{id}` · `POST /transfers/{id}/complete` · `POST /transfers/{id}/cancel` |
 | Compras | `GET/POST /suppliers` · `PUT /suppliers/{id}` · `GET/POST /purchase-orders` · `GET/PUT /purchase-orders/{id}` · `POST /purchase-orders/{id}/approve` · `.../receive` · `.../cancel` |
 | Ventas | `GET /payment-methods` · `GET/POST /customers` · `PUT /customers/{id}` · `GET/POST /sales` · `GET /sales/{id}` · `POST /sales/{id}/cancel` |
+| Configuración | `GET/PUT /company` · `GET/POST /branches` · `PUT /branches/{id}` · `GET /warehouses?detail=true` · `POST /warehouses` · `PUT /warehouses/{id}` · `GET/POST /document-series` · `PUT /document-series/{id}` · `GET /payment-methods?all=true` · `PUT /payment-methods/{id}` · `GET /emails` · `POST /emails/{id}/retry` · `POST /auth/change-password` |
 | Reportes y ML | `GET /reports/dashboard` · `GET /reports/sales` · `GET /reports/top-products` · `GET /predictions` · `POST /predictions/run` · `GET /alerts` · `POST /alerts/{id}/acknowledge` · `POST /alerts/{id}/resolve` |
 
 ## Tests

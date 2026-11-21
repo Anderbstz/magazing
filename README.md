@@ -1,6 +1,6 @@
 # Magazing · Frontend
 
-Panel web de **Magazing** (inventario y ventas para pymes). Consume la API REST en .NET 10.
+Panel web de **Magazing**, sistema de inventario, compras y ventas para pymes. Es una SPA que consume la API REST en .NET 10 ([magazing-api](https://github.com/Anderbstz/magazing-api)).
 
 ## Stack
 
@@ -8,14 +8,13 @@ Panel web de **Magazing** (inventario y ventas para pymes). Consume la API REST 
 |---|---|
 | Base | Vite 8 + React 19 + TypeScript |
 | Estilos | Tailwind CSS 4 (componentes propios en `src/components/ui`) |
-| Navegación | React Router |
-| Datos del servidor | TanStack Query |
+| Navegación | React Router (rutas declaradas por módulo, carga diferida) |
+| Datos del servidor | TanStack Query (caché, reintentos, invalidación tras guardar) |
 | Formularios | react-hook-form + zod |
 | HTTP | axios (cliente único en `src/api/http.ts`) |
 | Íconos / avisos | lucide-react / sonner |
 | Gráficos | Recharts |
-| Datos simulados (solo dev) | MSW |
-| Tests | Vitest |
+| Calidad | oxlint, Vitest, `tsc` |
 
 ## Puesta en marcha
 
@@ -25,13 +24,13 @@ cp .env.example .env.local   # opcional
 npm run dev                  # http://localhost:5173
 ```
 
-En desarrollo, Vite reenvía `/api/*` a `http://localhost:5261` (el perfil `http` del backend), así que **no hace falta CORS** en local. Levanta primero la API:
+En desarrollo, Vite reenvía `/api/*` al backend (`VITE_DEV_API_TARGET`, por defecto `http://localhost:5261`), así que **no hace falta CORS** en local. Levanta primero la API:
 
 ```bash
 dotnet run --project ../backend/Magazing/Magazing.Api --launch-profile http
 ```
 
-Usuario de desarrollo: el que crea `backend/database/02_seed.sql` (ver comentario al inicio del archivo).
+Usuario de desarrollo: el que crea `backend/database/02_seed.sql` (ver el comentario al inicio del archivo).
 
 ## Scripts
 
@@ -44,76 +43,121 @@ Usuario de desarrollo: el que crea `backend/database/02_seed.sql` (ver comentari
 | `npm run preview` | Sirve el build localmente |
 | `npm test` | Tests unitarios (Vitest) |
 
+## Variables de entorno
+
+| Variable | Dónde | Valor |
+|---|---|---|
+| `VITE_API_URL` | Producción | URL pública de la API, sin barra final (ej. `https://magazing-api.onrender.com`). En desarrollo va vacía. |
+| `VITE_DEV_API_TARGET` | Solo desarrollo | A dónde reenvía Vite `/api` (por defecto `http://localhost:5261`). |
+
+Las variables `VITE_*` se **incrustan al compilar**: si cambian, hay que volver a hacer `npm run build`.
+
 ## Estructura
 
 ```
 src/
-├─ api/            cliente HTTP, normalización de errores, tipos compartidos (PagedResult)
-├─ app/            router, providers, páginas globales (404)
+├─ main.tsx            arranque: interceptores de auth + providers + router
+├─ app/                router.tsx (une las rutas de los módulos), navigation.ts (menú), providers, 404
+├─ api/                http.ts (axios + ApiError), download.ts (Excel/PDF), types.ts (Guid, PagedResult…)
+├─ config/             permissions.ts: los 21 permisos, espejo del backend
 ├─ components/
-│  ├─ ui/          botones, inputs, tablas, modales… (sin dependencias de negocio)
-│  └─ …            piezas de layout compartidas
-├─ config/         permisos (espejo del backend)
-├─ hooks/          hooks genéricos
-├─ lib/            utilidades: formato de moneda/fechas, query client, cn()
-└─ features/       un módulo por carpeta, igual que el backend
-   ├─ auth/        login, sesión, refresh token, guards por permiso
-   ├─ dashboard/
-   ├─ catalog/     productos, categorías, marcas, unidades, precios
-   ├─ inventory/   stock, kardex, ajustes, transferencias
-   ├─ purchases/   proveedores, órdenes de compra
-   ├─ sales/       punto de venta, clientes, comprobantes
-   ├─ reports/
-   ├─ forecast/    predicción de demanda y alertas
-   └─ admin/       usuarios, roles y permisos
+│  ├─ ui/              botón, input, tabla, diálogo, paginación… (sin lógica de negocio)
+│  ├─ layout/          app-shell (sidebar, cabecera, usuario)
+│  └─ …                piezas compartidas entre módulos (page-header, stat-card, product-picker, download-button)
+├─ hooks/              hooks genéricos (use-debounced-value)
+├─ lib/                utilidades puras: formato de moneda y fechas, IGV, CSV, query client, cn()
+└─ features/           un módulo por carpeta, igual que los UseCases del backend
+   ├─ auth/            login, sesión, refresh token, guards por permiso
+   ├─ dashboard/       inicio (indicadores o accesos rápidos según el rol)
+   ├─ catalog/         productos, categorías, marcas, unidades, precios
+   ├─ inventory/       stock, kardex, ajustes, transferencias
+   ├─ purchases/       proveedores, órdenes de compra, recepción
+   ├─ sales/           punto de venta, ventas, clientes, comprobantes
+   ├─ reports/         reportes, predicción de demanda y alertas
+   ├─ admin/           usuarios, roles y permisos
+   └─ settings/        empresa, sucursales, almacenes, series, pagos, correos, perfil
 ```
 
-Cada módulo sigue el mismo patrón:
+### Anatomía de un módulo
+
+Todos los módulos siguen el mismo patrón. Si sabes leer uno, sabes leerlos todos:
 
 ```
 features/<modulo>/
-├─ api.ts          tipos (espejo de los DTO) y funciones que llaman a la API
-├─ queries.ts      hooks de TanStack Query (useXxx, useCreateXxx…)
-├─ routes.tsx      rutas del módulo
-└─ pages/ y components/
+├─ api.ts        contrato con la API: tipos (espejo de los DTO de .NET) + funciones que llaman a http
+├─ queries.ts    hooks de TanStack Query: useXxx (lecturas) y useCreateXxx / useSaveXxx (escrituras)
+├─ routes.tsx    rutas del módulo, cada una protegida por su permiso
+├─ labels.ts     (opcional) textos legibles de estados y códigos: DRAFT → "Borrador"
+├─ pages/        pantallas completas, una por ruta: <nombre>-page.tsx
+└─ components/   piezas usadas solo por este módulo (diálogos, selectores, formularios)
 ```
 
-## Ramas
+## Reglas
 
-- `main`: estructura base.
-- `feature/<modulo>`: un módulo por rama, apiladas en este orden (cada una sale de la anterior):
-  `auth` → `catalog` → `admin` → `mocks` → `inventory` → `purchases` → `sales` → `dashboard` → `polish` → `settings` → `login`.
+**`api.ts`: solo el contrato**
+- Tipos con los mismos nombres y forma que los DTO del backend (JSON en camelCase, listas paginadas con `PagedResult<T>`).
+- Funciones que llaman a `http` y devuelven `r.data`. Nada de estado, toasts ni React.
+- Si el backend cambia un DTO, se cambia aquí primero y TypeScript señala todo lo que se rompe.
 
-## Producción
+**`queries.ts`: el estado del servidor**
+- Un objeto `xxxKeys` con las claves de caché del módulo.
+- Lecturas con `useQuery` y escrituras con `useMutation`. Cada mutación **invalida** las claves afectadas (por ejemplo, vender invalida ventas y stock) y muestra el `toast.success`.
+- Los errores de las mutaciones los muestra el `queryClient` global (`src/lib/query-client.ts`), salvo que la pantalla los maneje con `meta: { silent: true }`.
+- Las pantallas **nunca** llaman a `api.ts` directo: siempre a través de un hook.
 
-1. Define `VITE_API_URL` con la URL pública de la API (Render), sin barra final.
-2. `npm run build` y publica `dist/` en Cloudflare Pages o Vercel.
-3. Configura el fallback de SPA (todas las rutas → `index.html`). En Cloudflare Pages lo hace `public/_redirects`.
-4. En el backend, habilita **CORS** para el dominio del frontend.
+**`pages/` y `components/`**
+- Una página por ruta, con el nombre `<nombre>-page.tsx`. Arma la pantalla con hooks de `queries.ts` y componentes de `components/ui`.
+- Si una pieza la usan dos módulos o más, sube a `src/components/`. Si es genérica (sin negocio), va a `src/components/ui/`.
 
-## Datos simulados (MSW)
+**Nombres**
+- Archivos en **kebab-case** (`product-form-dialog.tsx`, `use-auth.ts`) y componentes en **PascalCase** dentro del archivo.
+- Imports absolutos con `@/` (por ejemplo `@/components/ui/button`); relativos solo dentro del mismo módulo (`../api`).
 
-El backend todavía no expone inventario, compras, ventas ni reportes. Para terminar el frontend
-sin esperar, en **desarrollo** esos endpoints los responde [MSW](https://mswjs.io) desde el navegador:
+### Permisos
 
-- Lo que no está simulado (login, catálogo, usuarios, roles) va al backend real.
-- Los datos simulados usan **tus productos reales** del catálogo y generan ~16 semanas de historia
-  (ventas, compras, transferencias) con las mismas reglas del MVP: kardex, costo promedio ponderado,
-  stock no negativo, IGV incluido, correlativos por serie y factura solo con RUC.
-- Se guardan en `localStorage`; el botón **Reiniciar datos** del menú lateral los regenera.
-- Apagar: `VITE_MOCKS=off` en `.env.local`. En producción MSW no entra al bundle.
+La seguridad real la aplica la API (responde 403). El frontend solo **oculta lo que el usuario no puede usar**, en tres niveles:
 
-Cuando el backend implemente un endpoint, se borra su handler en `src/features/<modulo>/mocks.ts`
-y el frontend sigue igual. Los tipos de `src/features/<modulo>/api.ts` son el contrato que deben
-cumplir los DTO de .NET (JSON en camelCase, listas paginadas con `PagedResult`, errores `{ "error": "..." }`).
+| Nivel | Cómo | Ejemplo |
+|---|---|---|
+| Menú | `permission` en cada ítem de `src/app/navigation.ts`; los ítems sin permiso se ocultan solos | Reportes solo aparece con `reports.read` |
+| Ruta | `<RequirePermission permission={...}>` en `routes.tsx`; sin permiso se ve "Sin acceso" | `/sales/pos` exige `sales.create` |
+| Botón o sección | `<Can permission={...}>` o `useCan()` dentro de la página | "Anular venta" solo con `sales.cancel` |
 
-| Módulo | Endpoints simulados |
+Los permisos llegan en el login (claims del JWT) y se renuevan con el refresh token. Si se agrega un permiso en el backend, se agrega también en `src/config/permissions.ts`.
+
+| Rol (seed) | Qué hace |
 |---|---|
-| Inventario | `GET /warehouses` · `GET /stocks` · `GET /stocks/summary` · `GET /inventory/movements` · `POST /inventory/adjustments` · `GET/POST /transfers` · `GET /transfers/{id}` · `POST /transfers/{id}/complete` · `POST /transfers/{id}/cancel` |
-| Compras | `GET/POST /suppliers` · `PUT /suppliers/{id}` · `GET/POST /purchase-orders` · `GET/PUT /purchase-orders/{id}` · `POST /purchase-orders/{id}/approve` · `.../receive` · `.../cancel` |
-| Ventas | `GET /payment-methods` · `GET/POST /customers` · `PUT /customers/{id}` · `GET/POST /sales` · `GET /sales/{id}` · `POST /sales/{id}/cancel` |
-| Configuración | `GET/PUT /company` · `GET/POST /branches` · `PUT /branches/{id}` · `GET /warehouses?detail=true` · `POST /warehouses` · `PUT /warehouses/{id}` · `GET/POST /document-series` · `PUT /document-series/{id}` · `GET /payment-methods?all=true` · `PUT /payment-methods/{id}` · `GET /emails` · `POST /emails/{id}/retry` · `POST /auth/change-password` |
-| Reportes y ML | `GET /reports/dashboard` · `GET /reports/sales` · `GET /reports/top-products` · `GET /predictions` · `POST /predictions/run` · `GET /alerts` · `POST /alerts/{id}/acknowledge` · `POST /alerts/{id}/resolve` |
+| ADMIN | Todo |
+| WAREHOUSE | Stock, kardex, ajustes, transferencias, recibir compras, alertas |
+| PURCHASING | Proveedores, órdenes de compra (crear y aprobar), reportes, alertas |
+| SALES | Punto de venta, ventas, clientes, comprobantes |
+
+### Agregar un módulo nuevo
+
+1. Crear `src/features/<modulo>/` con `api.ts`, `queries.ts`, `routes.tsx` y `pages/`.
+2. Escribir en `api.ts` los tipos del contrato con la API y sus funciones.
+3. Crear en `queries.ts` los hooks, con sus claves de caché y las invalidaciones de cada mutación.
+4. Crear las páginas en `pages/` usando esos hooks.
+5. Declarar las rutas en `routes.tsx`, cada una dentro de un `RequirePermission`.
+6. Registrar las rutas en `src/app/router.tsx` (`...moduloRoutes`) y el menú en `src/app/navigation.ts`, con su permiso.
+7. Si el módulo trae permisos nuevos, agregarlos en `src/config/permissions.ts`.
+
+## Sesión
+
+- El access token vive en memoria. El refresh token y los datos del usuario van a `localStorage` para sobrevivir a la recarga.
+- Al cargar la app, `RequireAuth` renueva la sesión con `/auth/refresh`. Si falla con 401, manda al login.
+- `src/features/auth/interceptors.ts` agrega el token a cada petición y, ante un 401, intenta renovar una vez antes de cerrar la sesión.
+
+## Descargas (Excel y PDF)
+
+`src/api/download.ts` pide el archivo con el token de la sesión, toma el nombre de `Content-Disposition` y muestra el mensaje real del backend si falla. En las pantallas se usa `<DownloadButton path=... params=... fallbackName=...>`.
+
+## Producción (Render, Static Site)
+
+1. **Build command:** `npm ci && npm run build`. **Publish directory:** `dist`.
+2. Definir `VITE_API_URL` con la URL pública de la API.
+3. Agregar una regla **Rewrite** de `/*` a `/index.html`, para que las rutas de React no den 404 al recargar (`public/_redirects` hace lo mismo en Cloudflare Pages y Netlify).
+4. En el backend, habilitar **CORS** para el dominio del frontend y **exponer la cabecera `Content-Disposition`**, para que las descargas usen el nombre que manda el servidor.
 
 ## Tests
 
@@ -121,4 +165,4 @@ cumplir los DTO de .NET (JSON en camelCase, listas paginadas con `PagedResult`, 
 npm test
 ```
 
-Cubren el cálculo de IGV y las reglas de la base simulada (kardex, costo promedio, correlativos, RUC en factura).
+Cubren el cálculo de IGV (`src/lib/tax.test.ts`).

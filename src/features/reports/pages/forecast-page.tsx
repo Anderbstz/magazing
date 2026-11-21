@@ -61,7 +61,10 @@ export function ForecastPage() {
       />
 
       <div className="space-y-6">
-        <AlertsCard onSelectProduct={selectProduct} />
+        {/* La lista de alertas exige `alerts.manage` en la API: sin él, la tarjeta ni se pide. */}
+        <Can permission={P.AlertsManage}>
+          <AlertsCard onSelectProduct={selectProduct} />
+        </Can>
         <ProductForecastCard productId={productId} onSelect={selectProduct} />
       </div>
     </>
@@ -180,6 +183,7 @@ function AlertRow({ alert: a, onSelectProduct }: { alert: StockAlert; onSelectPr
 }
 
 function ProductForecastCard({ productId, onSelect }: { productId: string | null; onSelect: (id: string | null) => void }) {
+  const can = useCan()
   const forecast = useForecast(productId)
   const f = forecast.data
   const next = f?.points.find((p) => p.predictedQuantity !== null)
@@ -203,7 +207,9 @@ function ProductForecastCard({ productId, onSelect }: { productId: string | null
           <ProductPicker show="price" onSelect={(p) => onSelect(p.productId)} />
           <div className="flex flex-col items-center gap-2 py-12 text-center text-sm text-slate-500">
             <PackageSearch className="size-8 text-slate-300" aria-hidden />
-            También puedes hacer clic en un producto de las alertas.
+            {can(P.AlertsManage)
+              ? 'También puedes hacer clic en un producto de las alertas.'
+              : 'Busca un producto para ver su demanda de las próximas semanas.'}
           </div>
         </div>
       ) : forecast.isPending ? (

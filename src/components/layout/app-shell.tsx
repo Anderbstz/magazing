@@ -1,11 +1,12 @@
 import { LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { navigation } from '@/app/navigation'
 import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { queryClient } from '@/lib/query-client'
 import { cn } from '@/lib/utils'
+import { MocksNotice } from './mocks-notice'
 
 export function AppShell() {
   const [open, setOpen] = useState(false)
@@ -13,12 +14,12 @@ export function AppShell() {
   return (
     <div className="flex min-h-full">
       {open && (
-        <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />
+        <div className="fade-in fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white ring-1 ring-slate-200 transition-transform lg:translate-x-0',
+          'drawer fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-white ring-1 ring-slate-200 transition-transform duration-250 ease-drawer lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -38,6 +39,7 @@ export function AppShell() {
         </div>
         {/* En móvil, el menú se cierra al elegir una opción. */}
         <SidebarNav onNavigate={() => setOpen(false)} />
+        <MocksNotice />
         <UserFooter />
       </aside>
 
@@ -80,7 +82,7 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
-                    end={item.to === '/'}
+                    end={item.end}
                     onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
@@ -116,13 +118,15 @@ function UserFooter() {
 
   return (
     <div className="flex items-center gap-3 border-t border-slate-200 p-4">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600 uppercase">
-        {user.username.slice(0, 2)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-800">{user.username}</p>
-        <p className="truncate text-xs text-slate-500">{user.roles.join(', ') || 'Sin rol'}</p>
-      </div>
+      <Link to="/profile" className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 -m-1 hover:bg-slate-50" title="Mi perfil">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600 uppercase">
+          {user.username.slice(0, 2)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-slate-800">{user.username}</p>
+          <p className="truncate text-xs text-slate-500">{user.roles.join(', ') || 'Sin rol'}</p>
+        </div>
+      </Link>
       <button
         type="button"
         onClick={handleLogout}

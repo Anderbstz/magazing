@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  ClipboardList,
   Boxes,
   KeyRound,
   LayoutDashboard,
@@ -7,6 +8,7 @@ import {
   ScrollText,
   Tag,
   Tags,
+  Truck,
   Users,
   Warehouse,
   type LucideIcon,
@@ -40,6 +42,13 @@ export const navigation: NavSection[] = [
       { to: '/inventory/stock', label: 'Stock', icon: Warehouse, permission: P.InventoryRead },
       { to: '/inventory/kardex', label: 'Kardex', icon: ScrollText, permission: P.InventoryRead },
       { to: '/inventory/transfers', label: 'Transferencias', icon: ArrowLeftRight, permission: P.InventoryRead },
+    ],
+  },
+  {
+    title: 'Compras',
+    items: [
+      { to: '/purchases/orders', label: 'Órdenes de compra', icon: ClipboardList, permission: P.PurchasesRead },
+      { to: '/purchases/suppliers', label: 'Proveedores', icon: Truck, permission: P.SuppliersManage },
     ],
   },
   {

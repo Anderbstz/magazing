@@ -1,5 +1,5 @@
 /**
- * Contrato del módulo de compras (aún sin backend: en desarrollo responde MSW, ver ./mocks.ts).
+ * Contrato del módulo de compras con la API .NET.
  * Flujo de la orden: DRAFT → APPROVED → RECEIVED, o CANCELLED antes de recibir.
  */
 import { http } from '@/api/http'

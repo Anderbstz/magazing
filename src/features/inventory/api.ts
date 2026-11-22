@@ -1,7 +1,6 @@
 /**
  * Contrato del módulo de inventario.
- * El backend aún no lo implementa: en desarrollo responde MSW (ver ./mocks.ts).
- * Estos tipos son la especificación que deben cumplir los DTO de .NET.
+ * Estos tipos son el contrato con la API .NET: deben coincidir con sus DTO.
  */
 import { http } from '@/api/http'
 import type { Guid, IsoDate, PagedResult, PageParams } from '@/api/types'

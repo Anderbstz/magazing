@@ -152,6 +152,16 @@ Los permisos llegan en el login (claims del JWT) y se renuevan con el refresh to
 
 `src/api/download.ts` pide el archivo con el token de la sesión, toma el nombre de `Content-Disposition` y muestra el mensaje real del backend si falla. En las pantallas se usa `<DownloadButton path=... params=... fallbackName=...>`.
 
+## PWA (app instalable)
+
+Magazing se puede instalar como app (Chrome/Edge: ícono de instalar en la barra de direcciones o botón **Instalar app** del menú; Android: "Agregar a pantalla de inicio"; iPhone: Compartir → "Agregar a inicio").
+
+- Lo configura `vite-plugin-pwa` en `vite.config.ts`: manifest, íconos (`public/pwa-*.png`) y service worker.
+- El service worker guarda **solo los archivos de la app** (JS, CSS, íconos). La API nunca se guarda en caché.
+- **No hay modo sin conexión**, a propósito: los correlativos, el stock y el costo promedio los calcula el servidor. Sin internet se muestra un aviso (`OfflineBanner`).
+- Cuando se despliega una versión nueva aparece "Hay una versión nueva · Actualizar" (`PwaUpdatePrompt`); no se recarga sola para no cortar una venta a medias.
+- El service worker solo existe en el build (`npm run build && npm run preview`), no en `npm run dev`.
+
 ## Producción (Docker en Render)
 
 La imagen tiene dos etapas: **Node 22** compila la SPA y **nginx** sirve `dist/`.

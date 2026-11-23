@@ -1,10 +1,11 @@
-import { ChevronDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
+import { ChevronDown, Download, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { useState, type FocusEvent, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { navigationFor, type NavItem, type NavSection } from '@/app/navigation'
 import { P } from '@/config/permissions'
 import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
+import { useInstallPrompt } from '@/hooks/use-install-prompt'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { queryClient } from '@/lib/query-client'
@@ -66,6 +67,7 @@ export function AppShell() {
 
         {/* En móvil, el menú se cierra al elegir una opción. */}
         {collapsed ? <SidebarRail /> : <SidebarNav onNavigate={() => setOpen(false)} />}
+        <InstallAppButton collapsed={collapsed} />
         <UserFooter collapsed={collapsed} />
       </aside>
 
@@ -282,6 +284,30 @@ function SidebarRail() {
         </div>
       )}
     </nav>
+  )
+}
+
+/** "Instalar app": solo aparece cuando el navegador ofrece instalar Magazing (Chrome, Edge, Android). */
+function InstallAppButton({ collapsed }: { collapsed: boolean }) {
+  const { canInstall, install } = useInstallPrompt()
+  if (!canInstall) return null
+
+  return (
+    <div className={cn('pb-2', collapsed ? 'flex justify-center' : 'px-3')}>
+      <button
+        type="button"
+        onClick={install}
+        title="Instalar Magazing en este equipo"
+        aria-label="Instalar app"
+        className={cn(
+          'flex items-center gap-2.5 rounded-lg text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50',
+          collapsed ? 'size-10 justify-center' : 'w-full px-3 py-2',
+        )}
+      >
+        <Download className="size-4.5 shrink-0" aria-hidden />
+        {!collapsed && 'Instalar app'}
+      </button>
+    </div>
   )
 }
 

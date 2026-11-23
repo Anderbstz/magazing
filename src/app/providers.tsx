@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Toaster } from 'sonner'
+import { OfflineBanner, PwaUpdatePrompt } from '@/components/pwa'
 import { queryClient } from '@/lib/query-client'
 
 // Solo en desarrollo: así las devtools no entran al bundle de producción.
@@ -13,6 +14,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       <Toaster position="top-right" richColors closeButton />
+      <OfflineBanner />
+      <PwaUpdatePrompt />
       {ReactQueryDevtools && (
         <Suspense>
           <ReactQueryDevtools buttonPosition="bottom-left" />

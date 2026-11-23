@@ -1,6 +1,6 @@
 import { MutationCache, QueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { ApiError } from '@/api/http'
+import { notifyError } from './notify'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,7 +18,7 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: (error, _vars, _ctx, mutation) => {
       if (mutation.meta?.silent) return
-      toast.error(error.message)
+      notifyError(error, mutation.meta?.errorTitle)
     },
   }),
 })
@@ -26,6 +26,6 @@ export const queryClient = new QueryClient({
 declare module '@tanstack/react-query' {
   interface Register {
     defaultError: ApiError
-    mutationMeta: { silent?: boolean }
+    mutationMeta: { silent?: boolean; errorTitle?: string }
   }
 }

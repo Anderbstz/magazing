@@ -4,12 +4,13 @@ import { Navigate, Outlet, useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import type { Permission } from '@/config/permissions'
+import { ChangeTemporaryPasswordPage } from './pages/change-temporary-password-page'
 import { refreshSession, session } from './session'
 import { useCan, useSession } from './use-auth'
 
 /** Protege las rutas privadas: renueva la sesión guardada o manda al login. */
 export function RequireAuth() {
-  const { status } = useSession()
+  const { status, user } = useSession()
   const location = useLocation()
   const [failure, setFailure] = useState<{ message: string } | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -42,6 +43,7 @@ export function RequireAuth() {
     const from = location.pathname + location.search
     return <Navigate to="/login" replace state={{ from }} />
   }
+  if (user?.mustChangePassword) return <ChangeTemporaryPasswordPage />
   return <Outlet />
 }
 

@@ -31,9 +31,15 @@ export function useEmails(filters: EmailFilters) {
 }
 
 /** Mutación que avisa y refresca los datos de configuración (y lo que dependa de ellos). */
-function useSettingsMutation<T, R>(fn: (arg: T) => Promise<R>, message: string, extra: readonly (readonly string[])[] = []) {
+function useSettingsMutation<T, R>(
+  fn: (arg: T) => Promise<R>,
+  message: string,
+  errorTitle: string,
+  extra: readonly (readonly string[])[] = [],
+) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle },
     mutationFn: fn,
     onSuccess: () => {
       toast.success(message)
@@ -42,33 +48,39 @@ function useSettingsMutation<T, R>(fn: (arg: T) => Promise<R>, message: string, 
   })
 }
 
-export const useSaveCompany = () => useSettingsMutation((body: CompanyRequest) => settingsApi.updateCompany(body), 'Datos de la empresa guardados')
+export const useSaveCompany = () => useSettingsMutation((body: CompanyRequest) => settingsApi.updateCompany(body), 'Datos de la empresa guardados', 'No se pudieron guardar los datos de la empresa')
 
 export const useSaveBranch = () =>
-  useSettingsMutation(({ id, body }: { id?: Guid; body: BranchRequest }) => settingsApi.saveBranch(id, body), 'Sucursal guardada')
+  useSettingsMutation(({ id, body }: { id?: Guid; body: BranchRequest }) => settingsApi.saveBranch(id, body), 'Sucursal guardada', 'No se pudo guardar la sucursal')
 
 export const useSaveWarehouse = () =>
   useSettingsMutation(
     ({ id, body }: { id?: Guid; body: WarehouseRequest }) => settingsApi.saveWarehouse(id, body),
     'Almacén guardado',
+    'No se pudo guardar el almacén',
     [inventoryKeys.warehouses],
   )
 
 export const useCreateSeries = () =>
-  useSettingsMutation((body: DocumentSeriesRequest) => settingsApi.createSeries(body), 'Serie creada')
+  useSettingsMutation((body: DocumentSeriesRequest) => settingsApi.createSeries(body), 'Serie creada', 'No se pudo crear la serie')
 
 export const useToggleSeries = () =>
-  useSettingsMutation(({ id, isActive }: { id: Guid; isActive: boolean }) => settingsApi.setSeriesActive(id, isActive), 'Serie actualizada')
+  useSettingsMutation(({ id, isActive }: { id: Guid; isActive: boolean }) => settingsApi.setSeriesActive(id, isActive), 'Serie actualizada', 'No se pudo actualizar la serie')
 
 export const useUpdatePaymentMethod = () =>
   useSettingsMutation(
     ({ id, name, isActive }: { id: Guid; name: string; isActive: boolean }) => settingsApi.updatePaymentMethod(id, { name, isActive }),
     'Método de pago actualizado',
+    'No se pudo actualizar el método de pago',
     [salesKeys.paymentMethods],
   )
 
-export const useRetryEmail = () => useSettingsMutation((id: Guid) => settingsApi.retryEmail(id), 'Correo reencolado: se reintentará en unos segundos')
+export const useRetryEmail = () => useSettingsMutation((id: Guid) => settingsApi.retryEmail(id), 'Correo reencolado: se reintentará en unos segundos', 'No se pudo reintentar el correo')
 
 export function useChangePassword() {
-  return useMutation({ mutationFn: settingsApi.changePassword, onSuccess: () => toast.success('Contraseña actualizada') })
+  return useMutation({
+    meta: { errorTitle: 'No se pudo cambiar la contraseña' },
+    mutationFn: settingsApi.changePassword,
+    onSuccess: () => toast.success('Contraseña actualizada'),
+  })
 }

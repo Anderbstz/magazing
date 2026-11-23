@@ -105,7 +105,7 @@ export function CustomerDialog({
           </Select>
         </Field>
         <Field label="Número" htmlFor="cus-docnum" required error={errors.documentNumber?.message} hint={DOC_HINT[documentType]}>
-          <Input id="cus-docnum" autoFocus inputMode={documentType === 'DNI' || documentType === 'RUC' ? 'numeric' : 'text'} aria-invalid={!!errors.documentNumber} {...form.register('documentNumber')} />
+          <Input id="cus-docnum" autoFocus maxLength={documentType === 'DNI' ? 8 : documentType === 'RUC' ? 11 : 20} allow={documentType === 'DNI' || documentType === 'RUC' ? 'digits' : undefined} aria-invalid={!!errors.documentNumber} {...form.register('documentNumber')} />
         </Field>
         <Field label={documentType === 'RUC' ? 'Razón social' : 'Nombre completo'} htmlFor="cus-name" required error={errors.fullName?.message} className="sm:col-span-2">
           <Input id="cus-name" aria-invalid={!!errors.fullName} {...form.register('fullName')} />
@@ -114,7 +114,7 @@ export function CustomerDialog({
           <Input id="cus-email" type="email" {...form.register('email')} />
         </Field>
         <Field label="Teléfono" htmlFor="cus-phone" error={errors.phone?.message}>
-          <Input id="cus-phone" type="tel" {...form.register('phone')} />
+          <Input id="cus-phone" type="tel" allow="phone" {...form.register('phone')} />
         </Field>
         <Field label="Dirección" htmlFor="cus-address" error={errors.address?.message} className="sm:col-span-2">
           <Input id="cus-address" {...form.register('address')} />

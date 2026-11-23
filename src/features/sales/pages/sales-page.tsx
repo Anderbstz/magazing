@@ -19,6 +19,7 @@ import { useCan } from '@/features/auth/use-auth'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { formatDateTime, formatMoney } from '@/lib/format'
 import type { InvoiceType, SaleStatus } from '../api'
+import { printReceipt } from '@/lib/print'
 import { Receipt } from '../components/receipt'
 import { useCancelSale, useSale, useSales } from '../queries'
 
@@ -116,6 +117,9 @@ export function SalesPage() {
                   <TH className="hidden lg:table-cell">Pago</TH>
                   <TH className="text-right">Total</TH>
                   <TH>Estado</TH>
+                  <TH className="w-12">
+                    <span className="sr-only">Acciones</span>
+                  </TH>
                 </tr>
               </THead>
               <TBody>
@@ -143,6 +147,18 @@ export function SalesPage() {
                     </TD>
                     <TD>
                       <Badge tone={s.status === 'COMPLETED' ? 'success' : 'danger'}>{s.status === 'COMPLETED' ? 'Completada' : 'Anulada'}</Badge>
+                    </TD>
+                    <TD className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <DownloadButton
+                        path={`/sales/${s.saleId}/pdf`}
+                        fallbackName={`${s.fullNumber}.pdf`}
+                        variant="ghost"
+                        size="icon"
+                        title="Descargar PDF"
+                        aria-label={`Descargar PDF de ${s.fullNumber}`}
+                      >
+                        <FileDown className="size-4" />
+                      </DownloadButton>
                     </TD>
                   </TR>
                 ))}
@@ -181,7 +197,7 @@ function SaleDialog({ id, onClose }: { id: string; onClose: () => void }) {
               Anular venta
             </Button>
           )}
-          <Button variant="secondary" onClick={() => window.print()} disabled={!s}>
+          <Button variant="secondary" onClick={() => printReceipt(s?.fullNumber)} disabled={!s}>
             <Printer className="size-4" /> Reimprimir
           </Button>
           <DownloadButton path={`/sales/${id}/pdf`} fallbackName={`${s?.fullNumber ?? 'comprobante'}.pdf`} disabled={!s}>

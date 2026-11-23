@@ -45,6 +45,7 @@ export function useProductPrices(id: Guid | null) {
 export function useSaveProduct() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar el producto' },
     mutationFn: (input: { id: Guid; body: UpdateProductRequest } | { id?: undefined; body: CreateProductRequest }) =>
       input.id !== undefined ? productsApi.update(input.id, input.body) : productsApi.create(input.body),
     onSuccess: (_data, input) => {
@@ -57,6 +58,7 @@ export function useSaveProduct() {
 export function useChangePrice() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo cambiar el precio' },
     mutationFn: ({ id, price }: { id: Guid; price: number }) => productsApi.changePrice(id, price),
     onSuccess: () => {
       toast.success('Precio actualizado')
@@ -74,6 +76,7 @@ export function useCategories() {
 export function useSaveCategory() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar la categoría' },
     mutationFn: (input: { id: Guid; body: UpdateCategoryRequest } | { id?: undefined; body: CreateCategoryRequest }) =>
       input.id !== undefined ? categoriesApi.update(input.id, input.body) : categoriesApi.create(input.body),
     onSuccess: (_data, input) => {
@@ -86,6 +89,7 @@ export function useSaveCategory() {
 export function useDeleteCategory() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo eliminar la categoría' },
     mutationFn: categoriesApi.remove,
     onSuccess: () => {
       toast.success('Categoría eliminada')
@@ -103,6 +107,7 @@ export function useBrands() {
 export function useSaveBrand() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar la marca' },
     mutationFn: (input: { id?: Guid; name: string; isActive: boolean }) =>
       input.id ? brandsApi.update(input.id, { name: input.name, isActive: input.isActive }) : brandsApi.create(input.name),
     onSuccess: (_data, input) => {
@@ -115,6 +120,7 @@ export function useSaveBrand() {
 export function useDeleteBrand() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo eliminar la marca' },
     mutationFn: brandsApi.remove,
     onSuccess: () => {
       toast.success('Marca eliminada')
@@ -132,6 +138,7 @@ export function useUnits() {
 export function useSaveUnit() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar la unidad' },
     mutationFn: (input: { id?: Guid; body: CreateUnitRequest }) =>
       input.id
         ? unitsApi.update(input.id, { name: input.body.name, allowsDecimals: input.body.allowsDecimals })

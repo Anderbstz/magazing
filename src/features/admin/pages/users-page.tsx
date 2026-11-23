@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Plus, Search } from 'lucide-react'
+import { Check, Copy, KeyRound, Pencil, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router'
 import { z } from 'zod'
@@ -14,14 +15,15 @@ import { Checkbox, Input } from '@/components/ui/input'
 import { Pagination } from '@/components/ui/pagination'
 import { LoadingBlock } from '@/components/ui/spinner'
 import { EmptyState, ErrorState } from '@/components/ui/states'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { P } from '@/config/permissions'
 import { Can } from '@/features/auth/guards'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { formatDateTime } from '@/lib/format'
-import type { Role, User } from '../api'
-import { useCreateUser, useRoles, useUpdateUser, useUsers } from '../queries'
+import type { Role, User, UserAccess } from '../api'
+import { useCreateUser, useResetUserAccess, useRoles, useUpdateUser, useUsers } from '../queries'
 
 const PAGE_SIZE = 20
 
@@ -41,6 +43,11 @@ export function UsersPage() {
     setEditing(user)
     setFormOpen(true)
   }
+
+  // Contraseña temporal recién generada: se muestra una sola vez.
+  const [access, setAccess] = useState<UserAccess | null>(null)
+  const [resetting, setResetting] = useState<User | null>(null)
+  const resetAccess = useResetUserAccess()
 
   function closeForm() {
     setFormOpen(false)
@@ -116,13 +123,28 @@ export function UsersPage() {
                     </TD>
                     <TD className="hidden lg:table-cell">{formatDateTime(u.lastLoginAt)}</TD>
                     <TD>
-                      <ActiveBadge active={u.isActive} />
+                      <div className="flex flex-wrap gap-1">
+                        <ActiveBadge active={u.isActive} />
+                        {u.isActive && u.mustChangePassword && <AccessBadge expiresAt={u.tempPasswordExpiresAt} />}
+                      </div>
                     </TD>
                     <TD>
                       <Can permission={P.UsersManage}>
-                        <Button variant="ghost" size="icon" title="Editar" aria-label={`Editar ${u.username}`} onClick={() => openForm(u)}>
-                          <Pencil className="size-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Reenviar acceso"
+                            aria-label={`Reenviar acceso a ${u.username}`}
+                            disabled={!u.isActive}
+                            onClick={() => setResetting(u)}
+                          >
+                            <KeyRound className="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Editar" aria-label={`Editar ${u.username}`} onClick={() => openForm(u)}>
+                            <Pencil className="size-4" />
+                          </Button>
+                        </div>
                       </Can>
                     </TD>
                   </TR>
@@ -139,7 +161,31 @@ export function UsersPage() {
         )}
       </Card>
 
-      <UserFormDialog open={formOpen} user={editing} onClose={closeForm} />
+      <UserFormDialog open={formOpen} user={editing} onClose={closeForm} onCreated={setAccess} />
+
+      <ConfirmDialog
+        open={!!resetting}
+        title="Reenviar acceso"
+        message={
+          resetting
+            ? `Se generará una nueva contraseña temporal para @${resetting.username} y se enviará a ${resetting.email}. La contraseña actual dejará de funcionar y deberá cambiarla al ingresar.`
+            : ''
+        }
+        confirmLabel="Reenviar acceso"
+        loading={resetAccess.isPending}
+        onConfirm={() =>
+          resetting &&
+          resetAccess.mutate(resetting.userId, {
+            onSuccess: (result) => {
+              setResetting(null)
+              setAccess(result)
+            },
+          })
+        }
+        onClose={() => setResetting(null)}
+      />
+
+      <AccessDialog access={access} onClose={() => setAccess(null)} />
     </>
   )
 }
@@ -155,17 +201,23 @@ const baseSchema = z.object({
     .regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, punto, guion y guion bajo'),
   email: z.email('Correo no válido').max(150, 'Máximo 150 caracteres'),
   fullName: z.string().trim().min(1, 'Requerido').max(150, 'Máximo 150 caracteres'),
-  password: z.string(),
-  roleIds: z.array(z.string()),
+  roleIds: z.array(z.string()).min(1, 'Elige al menos un rol: sin rol no verá ningún módulo'),
   isActive: z.boolean(),
 })
 
-// La contraseña solo se pide al crear; el backend no tiene endpoint para cambiarla aquí.
-const createSchema = baseSchema.extend({ password: z.string().min(8, 'Mínimo 8 caracteres') })
-
 type FormValues = z.infer<typeof baseSchema>
 
-function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | null; onClose: () => void }) {
+function UserFormDialog({
+  open,
+  user,
+  onClose,
+  onCreated,
+}: {
+  open: boolean
+  user: User | null
+  onClose: () => void
+  onCreated: (access: UserAccess) => void
+}) {
   const isEdit = !!user
   const roles = useRoles()
   const create = useCreateUser()
@@ -173,7 +225,7 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
   const { user: me } = useSession()
   const pending = create.isPending || update.isPending
 
-  const form = useForm<FormValues>({ resolver: zodResolver(isEdit ? baseSchema : createSchema) })
+  const form = useForm<FormValues>({ resolver: zodResolver(baseSchema) })
   const { errors } = form.formState
 
   useEffect(() => {
@@ -182,7 +234,6 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
       username: user?.username ?? '',
       email: user?.email ?? '',
       fullName: user?.fullName ?? '',
-      password: '',
       roleIds: user ? namesToIds(user.roles, roles.data ?? []) : [],
       isActive: user?.isActive ?? true,
     })
@@ -206,12 +257,16 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
         {
           username: values.username,
           email: values.email,
-          password: values.password,
           fullName: values.fullName,
           branchId: null,
           roleIds: values.roleIds,
         },
-        { onSuccess: onClose },
+        {
+          onSuccess: (result) => {
+            onClose()
+            onCreated(result)
+          },
+        },
       )
     }
   }
@@ -244,20 +299,15 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
         <Field label="Nombre completo" htmlFor="u-fullname" required error={errors.fullName?.message}>
           <Input id="u-fullname" aria-invalid={!!errors.fullName} {...form.register('fullName')} />
         </Field>
-        <Field label="Correo" htmlFor="u-email" required error={errors.email?.message}>
+        <Field
+          label="Correo"
+          htmlFor="u-email"
+          required
+          error={errors.email?.message}
+          hint={isEdit ? undefined : 'Le llegará su usuario y una contraseña temporal, que deberá cambiar al ingresar.'}
+        >
           <Input id="u-email" type="email" aria-invalid={!!errors.email} {...form.register('email')} />
         </Field>
-        {!isEdit && (
-          <Field label="Contraseña" htmlFor="u-password" required error={errors.password?.message} hint="Mínimo 8 caracteres.">
-            <Input
-              id="u-password"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={!!errors.password}
-              {...form.register('password')}
-            />
-          </Field>
-        )}
 
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-slate-700">Roles</legend>
@@ -275,6 +325,11 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
                 </label>
               ))}
             </div>
+          )}
+          {errors.roleIds && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.roleIds.message}
+            </p>
           )}
         </fieldset>
 
@@ -295,4 +350,54 @@ function UserFormDialog({ open, user, onClose }: { open: boolean; user: User | n
 /** `UserDto.roles` trae nombres; la API de asignación pide IDs. */
 function namesToIds(names: string[], roles: Role[]) {
   return roles.filter((r) => names.includes(r.name)).map((r) => r.roleId)
+}
+
+/** "Pendiente de activar": aún no cambia su contraseña temporal. "Acceso vencido": la temporal ya caducó. */
+function AccessBadge({ expiresAt }: { expiresAt: string | null }) {
+  const [now] = useState(() => Date.now())
+  const expired = !!expiresAt && new Date(expiresAt).getTime() <= now
+  return expired ? <Badge tone="danger">Acceso vencido</Badge> : <Badge tone="warning">Pendiente de activar</Badge>
+}
+
+/** Muestra la contraseña temporal una sola vez, con botón para copiarla. */
+function AccessDialog({ access, onClose }: { access: UserAccess | null; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    if (!access) return
+    try {
+      await navigator.clipboard.writeText(access.temporaryPassword)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('No se pudo copiar', { description: 'Selecciona la contraseña y cópiala manualmente.' })
+    }
+  }
+
+  return (
+    <Dialog
+      open={!!access}
+      onClose={onClose}
+      title="Acceso generado"
+      description={access ? `@${access.user.username} · ${access.user.email}` : undefined}
+      footer={<Button onClick={onClose}>Listo</Button>}
+    >
+      {access && (
+        <div className="space-y-4 text-sm text-slate-600">
+          <p>Se le envió su usuario y esta contraseña temporal por correo. Si no le llega, entrégasela tú: solo se muestra esta vez.</p>
+          <div className="flex items-center gap-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200">
+            <code className="flex-1 font-mono text-lg font-semibold tracking-wider text-slate-900 select-all">{access.temporaryPassword}</code>
+            <Button variant="secondary" size="sm" onClick={copy}>
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? 'Copiada' : 'Copiar'}
+            </Button>
+          </div>
+          <p>
+            Válida hasta el <strong className="text-slate-800">{formatDateTime(access.expiresAt)}</strong>; al ingresar, el sistema le pedirá
+            crear su propia contraseña.
+          </p>
+        </div>
+      )}
+    </Dialog>
+  )
 }

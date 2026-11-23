@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { downloadFromApi } from '@/api/download'
+import { notifyError } from '@/lib/notify'
 import { Button, type ButtonProps } from '@/components/ui/button'
 
 type QueryValue = string | number | boolean | null | undefined
@@ -24,7 +25,7 @@ export function DownloadButton({ path, params = {}, fallbackName, children, vari
       const fileName = await downloadFromApi(path, params, fallbackName)
       toast.success(`Descargado ${fileName}`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo descargar el archivo.')
+      notifyError(error, 'No se pudo descargar el archivo')
     } finally {
       setLoading(false)
     }

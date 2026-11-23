@@ -143,7 +143,7 @@ function CompanyForm({ company }: { company: Company }) {
       onSubmit={form.handleSubmit((body) => save.mutate(body, { onSuccess: () => form.reset(form.getValues()) }))}
     >
       <Field label="RUC" htmlFor="co-ruc" required error={errors.ruc?.message}>
-        <Input id="co-ruc" inputMode="numeric" maxLength={11} aria-invalid={!!errors.ruc} {...form.register('ruc')} />
+        <Input id="co-ruc" allow="digits" maxLength={11} aria-invalid={!!errors.ruc} {...form.register('ruc')} />
       </Field>
       <Field label="Razón social" htmlFor="co-name" required error={errors.businessName?.message} className="lg:col-span-2">
         <Input id="co-name" aria-invalid={!!errors.businessName} {...form.register('businessName')} />
@@ -152,7 +152,7 @@ function CompanyForm({ company }: { company: Company }) {
         <Input id="co-trade" {...form.register('tradeName')} />
       </Field>
       <Field label="Teléfono" htmlFor="co-phone" error={errors.phone?.message}>
-        <Input id="co-phone" type="tel" {...form.register('phone')} />
+        <Input id="co-phone" type="tel" allow="phone" {...form.register('phone')} />
       </Field>
       <Field label="Correo" htmlFor="co-email" error={errors.email?.message} hint="Recibe las alertas de stock.">
         <Input id="co-email" type="email" aria-invalid={!!errors.email} {...form.register('email')} />
@@ -232,7 +232,7 @@ function BranchDialog({ branch, onClose }: { branch: Branch | null; onClose: () 
           <Input id="br-address" {...form.register('address')} />
         </Field>
         <Field label="Teléfono" htmlFor="br-phone" error={errors.phone?.message} className="sm:col-span-2">
-          <Input id="br-phone" type="tel" {...form.register('phone')} />
+          <Input id="br-phone" type="tel" allow="phone" {...form.register('phone')} />
         </Field>
         {branch && (
           <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">

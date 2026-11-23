@@ -14,6 +14,8 @@ export interface SessionUser {
   username: string
   roles: string[]
   permissions: string[]
+  /** Entró con contraseña temporal: debe crear una propia antes de usar la app. */
+  mustChangePassword?: boolean
 }
 
 export type SessionStatus = 'loading' | 'authenticated' | 'anonymous'
@@ -82,6 +84,7 @@ export const session = {
       username: response.username,
       roles: response.roles,
       permissions: response.permissions,
+      mustChangePassword: response.mustChangePassword,
     }
     accessToken = response.accessToken
     refreshToken = response.refreshToken
@@ -130,6 +133,14 @@ export function refreshSession(): Promise<string> {
     })
 
   return refreshing
+}
+
+/**
+ * Vuelve a iniciar sesión con la contraseña nueva. Al cambiarla, el backend revoca los refresh
+ * tokens abiertos (por seguridad), así que sin esto la sesión se cerraría sola al poco rato.
+ */
+export async function signInAgain(username: string, password: string) {
+  session.start(await authApi.login({ username, password }))
 }
 
 export async function logout() {

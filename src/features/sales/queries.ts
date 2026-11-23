@@ -29,6 +29,7 @@ export function useCustomers(params: PageParams & { isActive?: boolean }, enable
 export function useSaveCustomer() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar el cliente' },
     mutationFn: (input: { id?: Guid; body: CustomerRequest; isActive: boolean }) =>
       input.id ? customersApi.update(input.id, { ...input.body, isActive: input.isActive }) : customersApi.create(input.body),
     onSuccess: (_d, input) => {
@@ -68,6 +69,7 @@ export function useCreateSale() {
 export function useCancelSale() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo anular la venta' },
     mutationFn: ({ id, reason }: { id: Guid; reason: string }) => salesApi.cancel(id, reason),
     onSuccess: (sale) => {
       toast.success(`${sale.fullNumber} anulada: el stock volvió al almacén`)

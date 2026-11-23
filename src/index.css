@@ -248,21 +248,10 @@
 }
 
 /* Impresión de comprobantes: solo se imprime lo que tenga la clase .print-area. */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-area,
-  .print-area * {
-    visibility: visible;
-  }
-  .print-area {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 80mm;
-  }
-  dialog::backdrop {
-    background: transparent;
+/* Áreas que se desplazan sin mostrar la barra (el menú lateral). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

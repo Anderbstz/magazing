@@ -18,6 +18,7 @@ import { calculateLine, calculateSale, round2 } from '@/lib/tax'
 import { cn } from '@/lib/utils'
 import { customersApi, type Customer, type InvoiceType, type PaymentMethod, type SaleDetail } from '../api'
 import { CustomerPicker } from '../components/customer-picker'
+import { printReceipt } from '@/lib/print'
 import { Receipt } from '../components/receipt'
 import { useCreateSale, usePaymentMethods } from '../queries'
 
@@ -411,7 +412,7 @@ function SaleCompletedDialog({ sale, onNew }: { sale: SaleDetail; onNew: () => v
       description={`${sale.fullNumber} · ${formatMoney(sale.total)}`}
       footer={
         <>
-          <Button variant="secondary" onClick={() => window.print()}>
+          <Button variant="secondary" onClick={() => printReceipt(sale.fullNumber)}>
             <Printer className="size-4" /> Imprimir
           </Button>
           <DownloadButton path={`/sales/${sale.saleId}/pdf`} fallbackName={`${sale.fullNumber}.pdf`}>

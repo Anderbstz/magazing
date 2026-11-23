@@ -55,6 +55,7 @@ export function useMovements(filters: MovementFilters, enabled = true) {
 export function useAdjustStock() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo registrar el ajuste' },
     mutationFn: (body: AdjustmentRequest) => inventoryApi.adjust(body),
     onSuccess: () => {
       toast.success('Ajuste registrado en el kardex')
@@ -79,9 +80,10 @@ export function useTransfer(id: Guid | null) {
   })
 }
 
-function useTransferMutation<T, R>(fn: (arg: T) => Promise<R>, message: string) {
+function useTransferMutation<T, R>(fn: (arg: T) => Promise<R>, message: string, errorTitle: string) {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle },
     mutationFn: fn,
     onSuccess: () => {
       toast.success(message)
@@ -94,8 +96,8 @@ function useTransferMutation<T, R>(fn: (arg: T) => Promise<R>, message: string) 
 }
 
 export const useCreateTransfer = () =>
-  useTransferMutation((body: CreateTransferRequest) => inventoryApi.createTransfer(body), 'Transferencia creada')
+  useTransferMutation((body: CreateTransferRequest) => inventoryApi.createTransfer(body), 'Transferencia creada', 'No se pudo crear la transferencia')
 export const useCompleteTransfer = () =>
-  useTransferMutation((id: Guid) => inventoryApi.completeTransfer(id), 'Transferencia completada: el stock ya se movió')
+  useTransferMutation((id: Guid) => inventoryApi.completeTransfer(id), 'Transferencia completada: el stock ya se movió', 'No se pudo completar la transferencia')
 export const useCancelTransfer = () =>
-  useTransferMutation((id: Guid) => inventoryApi.cancelTransfer(id), 'Transferencia cancelada')
+  useTransferMutation((id: Guid) => inventoryApi.cancelTransfer(id), 'Transferencia cancelada', 'No se pudo cancelar la transferencia')

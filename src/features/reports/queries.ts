@@ -35,6 +35,7 @@ export function useAlerts(status?: AlertStatus) {
 export function useRunPredictions() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo ejecutar la predicción' },
     mutationFn: reportsApi.runPredictions,
     onSuccess: (r) => {
       toast.success(r.created ? `Predicción lista: ${r.created} alertas nuevas` : 'Predicción lista: sin alertas nuevas')
@@ -46,6 +47,7 @@ export function useRunPredictions() {
 export function useAlertAction() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo actualizar la alerta' },
     mutationFn: ({ id, action }: { id: Guid; action: 'acknowledge' | 'resolve' }) => reportsApi[action](id),
     onSuccess: (_a, { action }) => {
       toast.success(action === 'resolve' ? 'Alerta resuelta' : 'Alerta marcada como vista')

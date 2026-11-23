@@ -7,8 +7,46 @@ const base =
   'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ' +
   'aria-invalid:ring-red-500'
 
-export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cn(base, 'h-10', className)} {...props} />
+const ALLOWED = {
+  /** DNI, RUC, códigos de barras: solo dígitos. */
+  digits: /[^0-9]/g,
+  /** Teléfonos: dígitos, espacios, guiones, paréntesis y el + inicial. */
+  phone: /[^0-9+\-() ]/g,
+} as const
+
+/** Teclas que `type="number"` acepta pero que aquí no tienen sentido (notación científica y signos). */
+const NUMBER_BLOCKED_KEYS = new Set(['e', 'E', '+', '-'])
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** Restringe lo que se puede escribir; lo demás se descarta al teclear o pegar. */
+  allow?: keyof typeof ALLOWED
+}
+
+export function Input({ className, allow, onChange, onKeyDown, onWheel, ...props }: InputProps) {
+  const isNumber = props.type === 'number'
+  return (
+    <input
+      className={cn(base, 'h-10', className)}
+      inputMode={allow === 'digits' ? 'numeric' : allow === 'phone' ? 'tel' : isNumber ? 'decimal' : props.inputMode}
+      onChange={(e) => {
+        if (allow) {
+          const clean = e.target.value.replace(ALLOWED[allow], '')
+          if (clean !== e.target.value) e.target.value = clean
+        }
+        onChange?.(e)
+      }}
+      onKeyDown={(e) => {
+        if (isNumber && NUMBER_BLOCKED_KEYS.has(e.key)) e.preventDefault()
+        onKeyDown?.(e)
+      }}
+      // Evita que la rueda del mouse cambie la cantidad sin querer al desplazarse por la página.
+      onWheel={(e) => {
+        if (isNumber) e.currentTarget.blur()
+        onWheel?.(e)
+      }}
+      {...props}
+    />
+  )
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {

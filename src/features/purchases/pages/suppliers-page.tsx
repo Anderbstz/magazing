@@ -177,10 +177,10 @@ function SupplierDialog({ supplier, onClose }: { supplier: Supplier | null; onCl
         onSubmit={form.handleSubmit(({ isActive, ...body }) => save.mutate({ id: supplier?.supplierId, body, isActive }, { onSuccess: onClose }))}
       >
         <Field label="RUC" htmlFor="sup-ruc" required error={errors.ruc?.message}>
-          <Input id="sup-ruc" inputMode="numeric" maxLength={11} aria-invalid={!!errors.ruc} {...form.register('ruc')} />
+          <Input id="sup-ruc" allow="digits" maxLength={11} aria-invalid={!!errors.ruc} {...form.register('ruc')} />
         </Field>
         <Field label="Teléfono" htmlFor="sup-phone" error={errors.phone?.message}>
-          <Input id="sup-phone" type="tel" {...form.register('phone')} />
+          <Input id="sup-phone" type="tel" allow="phone" {...form.register('phone')} />
         </Field>
         <Field label="Razón social" htmlFor="sup-name" required error={errors.businessName?.message} className="sm:col-span-2">
           <Input id="sup-name" aria-invalid={!!errors.businessName} {...form.register('businessName')} />

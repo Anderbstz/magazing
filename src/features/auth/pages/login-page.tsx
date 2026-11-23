@@ -251,11 +251,7 @@ function ProductPreview() {
 
 function Logo() {
   return (
-    <div className="flex size-9 items-center justify-center rounded-lg bg-brand-600 ring-1 ring-white/20">
-      <svg viewBox="0 0 32 32" className="size-5" aria-hidden>
-        <path d="M8 23V9l8 7 8-7v14" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </div>
+    <img src="/logo.png" alt="" className="size-9" />
   )
 }
 

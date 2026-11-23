@@ -11,6 +11,8 @@ export interface AuthResponse {
   username: string
   roles: string[]
   permissions: string[]
+  /** Ingresó con contraseña temporal: la API solo permite cambiarla hasta que lo haga. */
+  mustChangePassword: boolean
 }
 
 export interface LoginRequest {

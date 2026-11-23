@@ -29,6 +29,7 @@ export function useSuppliers(params: PageParams & { isActive?: boolean }) {
 export function useSaveSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar el proveedor' },
     mutationFn: (input: { id?: Guid; body: SupplierRequest; isActive: boolean }) =>
       input.id ? suppliersApi.update(input.id, { ...input.body, isActive: input.isActive }) : suppliersApi.create(input.body),
     onSuccess: (_d, input) => {
@@ -57,6 +58,7 @@ export function usePurchaseOrder(id: Guid | undefined) {
 export function useSavePurchaseOrder() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo guardar la orden de compra' },
     mutationFn: (input: { id?: Guid; body: PurchaseOrderRequest }) =>
       input.id ? purchaseOrdersApi.update(input.id, input.body) : purchaseOrdersApi.create(input.body),
     onSuccess: (po, input) => {
@@ -77,6 +79,7 @@ const MESSAGES: Record<Transition, string> = {
 export function usePurchaseTransition() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorTitle: 'No se pudo actualizar la orden de compra' },
     mutationFn: ({ id, action }: { id: Guid; action: Transition }) => purchaseOrdersApi[action](id),
     onSuccess: (po, { action }) => {
       toast.success(MESSAGES[action])

@@ -15,12 +15,21 @@ export interface User {
   createdAt: IsoDate
   /** Nombres de rol, no IDs. */
   roles: string[]
+  /** Tiene una contraseña temporal sin cambiar (cuenta nueva o acceso reenviado). */
+  mustChangePassword: boolean
+  tempPasswordExpiresAt: IsoDate | null
+}
+
+/** Respuesta al crear una cuenta o reenviar el acceso: la contraseña temporal se ve una sola vez. */
+export interface UserAccess {
+  user: User
+  temporaryPassword: string
+  expiresAt: IsoDate
 }
 
 export interface CreateUserRequest {
   username: string
   email: string
-  password: string
   fullName: string
   branchId: Guid | null
   roleIds: Guid[]
@@ -61,7 +70,8 @@ export const usersApi = {
     http
       .get<PagedResult<User>>('/users', { params: { page, pageSize, search: search || undefined } })
       .then((r) => r.data),
-  create: (body: CreateUserRequest) => http.post<User>('/users', body).then((r) => r.data),
+  create: (body: CreateUserRequest) => http.post<UserAccess>('/users', body).then((r) => r.data),
+  resetAccess: (id: Guid) => http.post<UserAccess>(`/users/${id}/reset-access`).then((r) => r.data),
   update: (id: Guid, body: UpdateUserRequest) => http.put<User>(`/users/${id}`, body).then((r) => r.data),
   assignRoles: (id: Guid, roleIds: Guid[]) => http.put<User>(`/users/${id}/roles`, { roleIds }).then((r) => r.data),
 }

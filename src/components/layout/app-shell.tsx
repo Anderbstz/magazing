@@ -1,7 +1,7 @@
-import { LogOut, Menu, X } from 'lucide-react'
+import { ChevronDown, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router'
-import { navigationFor } from '@/app/navigation'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { navigationFor, type NavItem } from '@/app/navigation'
 import { P } from '@/config/permissions'
 import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
@@ -25,7 +25,7 @@ export function AppShell() {
       >
         <div className="flex h-16 items-center justify-between gap-3 px-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-brand-700 text-sm font-bold text-white">M</div>
+            <img src="/logo.png" alt="" className="size-8" />
             <span className="font-semibold">Magazing</span>
           </div>
           <button
@@ -52,6 +52,7 @@ export function AppShell() {
           >
             <Menu className="size-5" />
           </button>
+          <img src="/logo.png" alt="" className="size-6" />
           <span className="font-semibold">Magazing</span>
         </header>
 
@@ -63,20 +64,53 @@ export function AppShell() {
   )
 }
 
+/** true si la ruta actual pertenece a este ítem del menú. */
+function matches(pathname: string, item: NavItem) {
+  return item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + '/')
+}
+
+/**
+ * Menú en acordeón: cada sección se despliega con su título y solo una queda abierta a la vez
+ * (la de la pantalla actual, al navegar). Así el menú entra sin barra de desplazamiento.
+ */
 function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
   const can = useCan()
+  const { pathname } = useLocation()
+  const sections = navigationFor(can(P.UsersManage))
+    .map((section) => ({ ...section, items: section.items.filter((item) => !item.permission || can(item.permission)) }))
+    .filter((section) => section.items.length > 0)
+
+  const activeTitle = sections.find((s) => s.title && s.items.some((item) => matches(pathname, item)))?.title
+  const [open, setOpen] = useState<string | undefined>(activeTitle)
+  const [lastActive, setLastActive] = useState(activeTitle)
+  // Al cambiar de pantalla se abre la sección que la contiene.
+  if (activeTitle !== lastActive) {
+    setLastActive(activeTitle)
+    if (activeTitle) setOpen(activeTitle)
+  }
 
   return (
-    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
-      {navigationFor(can(P.UsersManage)).map((section, i) => {
-        const items = section.items.filter((item) => !item.permission || can(item.permission))
-        if (items.length === 0) return null
+    <nav className="scrollbar-none flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      {sections.map((section, i) => {
+        const { items } = section
+        const expanded = !section.title || open === section.title
+        const panelId = `nav-section-${i}`
         return (
           <div key={section.title ?? i}>
             {section.title && (
-              <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">{section.title}</p>
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                onClick={() => setOpen(expanded ? undefined : section.title)}
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide text-slate-400 uppercase hover:bg-slate-50 hover:text-slate-600"
+              >
+                {section.title}
+                <ChevronDown className={cn('size-3.5 transition-transform duration-200', expanded && 'rotate-180')} aria-hidden />
+              </button>
             )}
-            <ul className="space-y-0.5">
+            <div id={panelId} className={cn('grid transition-[grid-template-rows] duration-200 ease-out', expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+              <ul className="space-y-0.5 overflow-hidden" inert={!expanded}>
               {items.map((item) => (
                 <li key={item.to}>
                   <NavLink
@@ -95,7 +129,8 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
                   </NavLink>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </div>
           </div>
         )
       })}

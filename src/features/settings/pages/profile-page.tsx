@@ -11,6 +11,7 @@ import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { MODULE_LABELS } from '@/config/permissions'
 import type { User } from '@/features/admin/api'
+import { signInAgain } from '@/features/auth/session'
 import { useSession } from '@/features/auth/use-auth'
 import { formatDateTime } from '@/lib/format'
 import { useChangePassword } from '../queries'
@@ -105,6 +106,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 
 function ChangePasswordCard() {
+  const { user } = useSession()
   const change = useChangePassword()
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { currentPassword: '', newPassword: '', confirm: '' } })
   const { errors } = form.formState
@@ -116,7 +118,16 @@ function ChangePasswordCard() {
         noValidate
         className="space-y-4 p-5"
         onSubmit={form.handleSubmit(({ currentPassword, newPassword }) =>
-          change.mutate({ currentPassword, newPassword }, { onSuccess: () => form.reset() }),
+          change.mutate(
+            { currentPassword, newPassword },
+            {
+              onSuccess: async () => {
+                form.reset()
+                // El backend cierra las sesiones abiertas al cambiar la contraseña: se vuelve a entrar.
+                if (user) await signInAgain(user.username, newPassword).catch(() => undefined)
+              },
+            },
+          ),
         )}
       >
         <Field label="Contraseña actual" htmlFor="pw-current" required error={errors.currentPassword?.message}>

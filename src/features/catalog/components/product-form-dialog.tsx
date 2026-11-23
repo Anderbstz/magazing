@@ -124,7 +124,7 @@ export function ProductFormDialog({ open, product, onClose }: Props) {
           <Input id="sku" readOnly={isEdit} className="read-only:bg-slate-50 read-only:text-slate-500" aria-invalid={!!errors.sku} {...form.register('sku')} />
         </Field>
         <Field label="Código de barras" htmlFor="barcode" error={errors.barcode?.message}>
-          <Input id="barcode" inputMode="numeric" {...form.register('barcode')} />
+          <Input id="barcode" allow="digits" {...form.register('barcode')} />
         </Field>
 
         <Field label="Nombre" htmlFor="name" required error={errors.name?.message} className="sm:col-span-2">

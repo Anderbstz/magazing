@@ -1,19 +1,22 @@
+import { useCompany } from '@/features/settings/queries'
 import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format'
 import type { SaleDetail } from '../api'
 
 /**
- * Comprobante en formato ticket (80 mm). Con la clase `print-area`, `window.print()`
- * imprime solo esto (ver estilos de impresión en index.css).
+ * Comprobante en formato ticket (80 mm), con los datos de la empresa de Configuración
+ * (los mismos que usa el PDF). Se imprime con `printReceipt` (ver lib/print.ts).
  * No es un comprobante electrónico válido ante SUNAT (eso está en el roadmap).
  */
 export function Receipt({ sale }: { sale: SaleDetail }) {
+  const company = useCompany().data
   const title = sale.documentType === 'FACTURA' ? 'FACTURA DE VENTA' : 'BOLETA DE VENTA'
   return (
-    <div className="print-area mx-auto w-full max-w-[320px] bg-white font-mono text-[12px] leading-snug text-slate-900">
+    <div data-receipt className="mx-auto w-full max-w-[320px] bg-white font-mono text-[12px] leading-snug text-slate-900">
       <div className="text-center">
-        <p className="text-sm font-bold">MAGAZING</p>
-        <p>Tienda Principal · Arequipa</p>
-        <p>RUC 20123456789</p>
+        <p className="text-sm font-bold uppercase">{company ? (company.tradeName ?? company.businessName) : '…'}</p>
+        {company?.tradeName && <p>{company.businessName}</p>}
+        {company?.address && <p>{company.address}</p>}
+        {company && <p>RUC {company.ruc}</p>}
         <p className="mt-2 font-bold">{title}</p>
         <p className="font-bold">{sale.fullNumber}</p>
         {sale.status === 'CANCELLED' && <p className="mt-1 font-bold">*** ANULADA ***</p>}
@@ -31,8 +34,8 @@ export function Receipt({ sale }: { sale: SaleDetail }) {
 
       <table className="w-full">
         <tbody>
-          {sale.items.map((i) => (
-            <tr key={i.productId} className="align-top">
+          {sale.items.map((i, index) => (
+            <tr key={`${i.productId}-${index}`} className="align-top">
               <td className="pb-1">
                 {i.productName}
                 <br />

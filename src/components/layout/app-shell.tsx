@@ -1,7 +1,8 @@
 import { LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
-import { navigation } from '@/app/navigation'
+import { navigationFor } from '@/app/navigation'
+import { P } from '@/config/permissions'
 import { logout } from '@/features/auth/session'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { queryClient } from '@/lib/query-client'
@@ -67,7 +68,7 @@ function SidebarNav({ onNavigate }: { onNavigate: () => void }) {
 
   return (
     <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-2">
-      {navigation.map((section, i) => {
+      {navigationFor(can(P.UsersManage)).map((section, i) => {
         const items = section.items.filter((item) => !item.permission || can(item.permission))
         if (items.length === 0) return null
         return (

@@ -11,18 +11,14 @@ import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatMoney, formatQuantity } from '@/lib/format'
 import { toCsv, downloadFile } from '@/lib/csv'
+import { daysAgo, isoDate } from '@/lib/dates'
 import { cn } from '@/lib/utils'
 import type { GroupBy } from '../api'
 import { labelDate } from '../components/chart-utils'
 import { SalesBarChart, TopProductsChart } from '../components/charts'
 import { useSalesReport, useTopProducts } from '../queries'
 
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-const daysAgo = (n: number) => {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return iso(d)
-}
+const iso = isoDate
 
 const PRESETS = [
   { label: '7 días', from: () => daysAgo(6), groupBy: 'day' as GroupBy },

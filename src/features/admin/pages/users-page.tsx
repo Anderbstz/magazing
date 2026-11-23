@@ -201,7 +201,7 @@ const baseSchema = z.object({
     .regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, punto, guion y guion bajo'),
   email: z.email('Correo no válido').max(150, 'Máximo 150 caracteres'),
   fullName: z.string().trim().min(1, 'Requerido').max(150, 'Máximo 150 caracteres'),
-  roleIds: z.array(z.string()),
+  roleIds: z.array(z.string()).min(1, 'Elige al menos un rol: sin rol no verá ningún módulo'),
   isActive: z.boolean(),
 })
 
@@ -325,6 +325,11 @@ function UserFormDialog({
                 </label>
               ))}
             </div>
+          )}
+          {errors.roleIds && (
+            <p role="alert" className="mt-1.5 text-xs text-red-600">
+              {errors.roleIds.message}
+            </p>
           )}
         </fieldset>
 

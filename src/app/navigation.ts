@@ -103,3 +103,11 @@ export const navigation: NavSection[] = [
     ],
   },
 ]
+
+/** Orden del menú para quien dirige (gestiona usuarios): primero su equipo y el análisis, luego la operación. */
+const MANAGER_ORDER = [undefined, 'Administración', 'Análisis', 'Ventas', 'Inventario', 'Compras', 'Catálogo', 'Configuración']
+
+export function navigationFor(isManager: boolean): NavSection[] {
+  if (!isManager) return navigation
+  return [...navigation].sort((a, b) => MANAGER_ORDER.indexOf(a.title) - MANAGER_ORDER.indexOf(b.title))
+}

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Pencil, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'react-router'
 import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
 import { ActiveBadge, Badge } from '@/components/ui/badge'
@@ -16,7 +17,7 @@ import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { P } from '@/config/permissions'
 import { Can } from '@/features/auth/guards'
-import { useSession } from '@/features/auth/use-auth'
+import { useCan, useSession } from '@/features/auth/use-auth'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { formatDateTime } from '@/lib/format'
 import type { Role, User } from '../api'
@@ -30,12 +31,20 @@ export function UsersPage() {
   const debouncedSearch = useDebouncedValue(search.trim())
   const users = useUsers({ page, pageSize: PAGE_SIZE, search: debouncedSearch })
 
-  const [formOpen, setFormOpen] = useState(false)
+  // `?new=1` (botón "Nuevo usuario" del inicio) abre el formulario de alta directamente.
+  const can = useCan()
+  const [params, setParams] = useSearchParams()
+  const [formOpen, setFormOpen] = useState(() => params.get('new') === '1' && can(P.UsersManage))
   const [editing, setEditing] = useState<User | null>(null)
 
   function openForm(user: User | null) {
     setEditing(user)
     setFormOpen(true)
+  }
+
+  function closeForm() {
+    setFormOpen(false)
+    if (params.has('new')) setParams({}, { replace: true })
   }
 
   return (
@@ -130,7 +139,7 @@ export function UsersPage() {
         )}
       </Card>
 
-      <UserFormDialog open={formOpen} user={editing} onClose={() => setFormOpen(false)} />
+      <UserFormDialog open={formOpen} user={editing} onClose={closeForm} />
     </>
   )
 }

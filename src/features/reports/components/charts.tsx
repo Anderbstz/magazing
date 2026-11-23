@@ -4,9 +4,12 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   LabelList,
   Line,
+  Pie,
+  PieChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -14,7 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import { formatMoney, formatQuantity } from '@/lib/format'
-import { labelDate, SERIES } from './chart-utils'
+import { CATEGORICAL, labelDate, SERIES } from './chart-utils'
 import type { ForecastPoint } from '../api'
 
 const GRID = '#e2e8f0'
@@ -41,28 +44,95 @@ function TooltipRow({ color, label, value }: { color?: string; label: string; va
   )
 }
 
+export type SalesChartType = 'bar' | 'line' | 'area'
+
+interface SalesPoint {
+  label: string
+  total: number
+  count: number
+}
+
 /** Ventas por período: una sola serie, así que no lleva leyenda (el título la nombra). */
-export function SalesBarChart({ data, height = 260 }: { data: { label: string; total: number; count: number }[]; height?: number }) {
+export function SalesChart({ data, type = 'bar', height = 260 }: { data: SalesPoint[]; type?: SalesChartType; height?: number }) {
+  const tooltip = (
+    <Tooltip
+      cursor={type === 'bar' ? { fill: '#f1f5f9' } : { stroke: '#94a3b8', strokeDasharray: '3 3' }}
+      content={({ active, payload, label }) =>
+        active && payload?.length ? (
+          <TooltipBox title={String(label)}>
+            <TooltipRow color={SERIES.primary} label="Ventas" value={formatMoney(payload[0].payload.total)} />
+            <TooltipRow label="Comprobantes" value={String(payload[0].payload.count)} />
+          </TooltipBox>
+        ) : null
+      }
+    />
+  )
+  // Con pocos puntos se marca cada uno; con muchos, los puntos ensucian la línea.
+  const dot = data.length <= 14 ? { r: 3, strokeWidth: 0, fill: SERIES.primary } : false
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap={2}>
+      <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap={2}>
         <CartesianGrid vertical={false} stroke={GRID} />
         <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveStartEnd" minTickGap={16} />
         <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compactMoney} width={64} />
-        <Tooltip
-          cursor={{ fill: '#f1f5f9' }}
-          content={({ active, payload, label }) =>
-            active && payload?.length ? (
-              <TooltipBox title={String(label)}>
-                <TooltipRow color={SERIES.primary} label="Ventas" value={formatMoney(payload[0].payload.total)} />
-                <TooltipRow label="Comprobantes" value={String(payload[0].payload.count)} />
-              </TooltipBox>
-            ) : null
-          }
-        />
-        <Bar dataKey="total" fill={SERIES.primary} radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false} />
-      </BarChart>
+        {tooltip}
+        {type === 'bar' && <Bar dataKey="total" fill={SERIES.primary} radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false} />}
+        {type === 'line' && (
+          <Line dataKey="total" stroke={SERIES.primary} strokeWidth={2} dot={dot} activeDot={{ r: 5 }} isAnimationActive={false} />
+        )}
+        {type === 'area' && (
+          <Area dataKey="total" stroke={SERIES.primary} strokeWidth={2} fill={SERIES.primary} fillOpacity={0.15} dot={dot} activeDot={{ r: 5 }} isAnimationActive={false} />
+        )}
+      </ComposedChart>
     </ResponsiveContainer>
+  )
+}
+
+export function SalesBarChart(props: { data: SalesPoint[]; height?: number }) {
+  return <SalesChart {...props} type="bar" />
+}
+
+/**
+ * Participación de cada producto en el monto vendido. La leyenda va al lado como lista
+ * (nombre, % y monto): con etiquetas sobre las tajadas, las pequeñas no se leerían.
+ */
+export function TopProductsPie({ data }: { data: { productName: string; total: number; quantity: number }[] }) {
+  const sum = data.reduce((acc, x) => acc + x.total, 0)
+  const slices = data.map((x, i) => ({ ...x, color: CATEGORICAL[i % CATEGORICAL.length], pct: sum > 0 ? (x.total / sum) * 100 : 0 }))
+
+  return (
+    <div className="grid items-center gap-4 sm:grid-cols-[220px_1fr]">
+      <ResponsiveContainer width="100%" height={220}>
+        <PieChart>
+          <Tooltip
+            content={({ active, payload }) =>
+              active && payload?.length ? (
+                <TooltipBox title={payload[0].payload.productName}>
+                  <TooltipRow color={payload[0].payload.color} label="Vendido" value={formatMoney(payload[0].payload.total)} />
+                  <TooltipRow label="Participación" value={`${payload[0].payload.pct.toFixed(1)} %`} />
+                </TooltipBox>
+              ) : null
+            }
+          />
+          <Pie data={slices} dataKey="total" nameKey="productName" innerRadius={55} outerRadius={95} paddingAngle={1} stroke="#fff" strokeWidth={2} isAnimationActive={false}>
+            {slices.map((s) => (
+              <Cell key={s.productName} fill={s.color} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <ul className="space-y-2 text-sm">
+        {slices.map((s) => (
+          <li key={s.productName} className="flex items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: s.color }} aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-slate-700">{s.productName}</span>
+            <span className="tabular text-slate-500">{s.pct.toFixed(1)} %</span>
+            <span className="tabular w-24 text-right font-medium text-slate-900">{formatMoney(s.total)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

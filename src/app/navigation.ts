@@ -20,6 +20,7 @@ import {
   Users,
   Warehouse,
   Store,
+  Settings,
   type LucideIcon,
 } from 'lucide-react'
 import { P, type Permission } from '@/config/permissions'
@@ -36,6 +37,8 @@ export interface NavItem {
 
 export interface NavSection {
   title?: string
+  /** Ícono de la sección en el menú plegado (barra de íconos). */
+  icon?: LucideIcon
   items: NavItem[]
 }
 
@@ -49,6 +52,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Ventas',
+    icon: ShoppingCart,
     items: [
       { to: '/sales/pos', label: 'Punto de venta', icon: ShoppingCart, permission: P.SalesCreate },
       { to: '/sales', label: 'Ventas', icon: Receipt, permission: P.SalesRead, end: true },
@@ -57,6 +61,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Inventario',
+    icon: Warehouse,
     items: [
       { to: '/inventory/stock', label: 'Stock', icon: Warehouse, permission: P.InventoryRead },
       { to: '/inventory/kardex', label: 'Kardex', icon: ScrollText, permission: P.InventoryRead },
@@ -65,6 +70,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Compras',
+    icon: ClipboardList,
     items: [
       { to: '/purchases/orders', label: 'Órdenes de compra', icon: ClipboardList, permission: P.PurchasesRead },
       { to: '/purchases/suppliers', label: 'Proveedores', icon: Truck, permission: P.SuppliersManage },
@@ -72,6 +78,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Análisis',
+    icon: BarChart3,
     items: [
       { to: '/reports', label: 'Reportes', icon: BarChart3, permission: P.ReportsRead },
       { to: '/forecast', label: 'Predicción y alertas', icon: BrainCircuit, permission: P.InventoryRead },
@@ -79,6 +86,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Catálogo',
+    icon: Boxes,
     items: [
       { to: '/catalog/products', label: 'Productos', icon: Boxes, permission: P.CatalogRead },
       { to: '/catalog/categories', label: 'Categorías', icon: Tags, permission: P.CatalogRead },
@@ -88,6 +96,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Administración',
+    icon: Users,
     items: [
       { to: '/admin/users', label: 'Usuarios', icon: Users, permission: P.UsersRead },
       { to: '/admin/roles', label: 'Roles y permisos', icon: KeyRound, permission: P.UsersRead },
@@ -95,6 +104,7 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Configuración',
+    icon: Settings,
     items: [
       { to: '/settings/company', label: 'Empresa y sucursales', icon: Building2, permission: P.UsersManage },
       { to: '/settings/warehouses', label: 'Almacenes', icon: Store, permission: P.WarehousesManage },

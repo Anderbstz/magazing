@@ -56,12 +56,21 @@ export function toApiError(error: unknown): ApiError {
     }
 
     const { status, data } = error.response as { status: number; data?: BackendErrorBody }
+
+    // Validación automática de ASP.NET: viene en inglés ("The Password field is required."),
+    // así que se traduce a un motivo corto en español en vez de mostrarla tal cual.
+    if (data?.errors && Object.keys(data.errors).length > 0 && !data.error) {
+      return new ApiError(describeValidation(data.errors), status, undefined, error)
+    }
+
     const message =
       data?.error ??
       data?.detail ??
       data?.title ??
       (status === 403
         ? 'No tienes permiso para realizar esta acción.'
+        : status === 404 || status === 405
+          ? 'El servidor todavía no tiene esta función. Puede que esté desactualizado; intenta más tarde.'
         : status >= 500
           ? 'El servidor no está disponible en este momento. Intenta de nuevo en unos segundos.'
           : `Error ${status}`)
@@ -70,6 +79,43 @@ export function toApiError(error: unknown): ApiError {
   }
 
   return new ApiError(error instanceof Error ? error.message : 'Error desconocido', 0)
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  username: 'el usuario',
+  password: 'la contraseña',
+  currentpassword: 'la contraseña actual',
+  newpassword: 'la nueva contraseña',
+  email: 'el correo',
+  fullname: 'el nombre completo',
+  roleids: 'los roles',
+  name: 'el nombre',
+  sku: 'el SKU',
+  price: 'el precio',
+  quantity: 'la cantidad',
+  unitcost: 'el costo unitario',
+  items: 'los ítems',
+  idtoken: 'la cuenta de Google',
+}
+
+function fieldLabel(field: string) {
+  const key = field.replace(/^\$\.?/, '').replace(/\[\d+\]/g, '').split('.').pop() ?? ''
+  return FIELD_LABELS[key.toLowerCase()] ?? (key ? `el campo «${key.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()}»` : '')
+}
+
+/** "The Password field is required." → "Revisa los datos: falta la contraseña." */
+function describeValidation(errors: Record<string, string[]>) {
+  const parts = Object.entries(errors).map(([field, messages]) => {
+    const label = fieldLabel(field)
+    const text = messages.join(' ')
+    if (!label || field.toLowerCase() === 'request') return 'faltan datos en la solicitud'
+    if (/required/i.test(text)) return `falta ${label}`
+    if (/could not be converted|not a valid|invalid/i.test(text)) return `${label} tiene un formato inválido`
+    if (/maximum length|too long/i.test(text)) return `${label} es demasiado largo`
+    if (/minimum length|too short/i.test(text)) return `${label} es demasiado corto`
+    return `revisa ${label}`
+  })
+  return `Revisa los datos: ${[...new Set(parts)].join(', ')}.`
 }
 
 http.interceptors.response.use(undefined, (error) => Promise.reject(toApiError(error)))

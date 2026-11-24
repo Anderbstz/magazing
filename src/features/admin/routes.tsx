@@ -16,4 +16,13 @@ export const adminRoutes: RouteObject[] = [
       },
     ],
   },
+  {
+    element: <RequirePermission permission={P.UsersManage} />,
+    children: [
+      {
+        path: 'admin/sessions',
+        lazy: async () => ({ Component: (await import('./pages/sessions-page')).SessionsPage }),
+      },
+    ],
+  },
 ]

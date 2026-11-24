@@ -10,11 +10,22 @@ export const salesKeys = {
   customerList: (p: object) => ['customers', 'list', p] as const,
   sales: ['sales'] as const,
   saleList: (f: SaleFilters) => ['sales', 'list', f] as const,
+  topProducts: (warehouseId: Guid) => ['sales', 'top-products', warehouseId] as const,
   sale: (id: Guid) => ['sales', id] as const,
 }
 
 export function usePaymentMethods() {
   return useQuery({ queryKey: salesKeys.paymentMethods, queryFn: salesApi.paymentMethods, staleTime: 10 * 60_000 })
+}
+
+export function usePosTopProducts(warehouseId: Guid) {
+  return useQuery({
+    queryKey: salesKeys.topProducts(warehouseId),
+    queryFn: () => salesApi.topProducts(warehouseId),
+    enabled: !!warehouseId,
+    staleTime: 60_000,
+    meta: { silent: true },
+  })
 }
 
 export function useCustomers(params: PageParams & { isActive?: boolean }, enabled = true) {

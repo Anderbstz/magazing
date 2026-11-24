@@ -1,4 +1,4 @@
-import { History, Pencil, Plus, Search } from 'lucide-react'
+import { History, Pencil, Plus, Search, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/page-header'
@@ -15,6 +15,7 @@ import { Can } from '@/features/auth/guards'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { formatMoney, formatQuantity } from '@/lib/format'
 import type { Product } from '../api'
+import { ImportProductsDialog } from '../components/import-products-dialog'
 import { PriceDialog } from '../components/price-dialog'
 import { ProductFormDialog } from '../components/product-form-dialog'
 import { useBrands, useCategories, useProducts } from '../queries'
@@ -60,6 +61,8 @@ export function ProductsPage() {
     )
   }
 
+  const [importing, setImporting] = useState(false)
+
   function openForm(product: Product | null) {
     setEditing(product)
     setFormOpen(true)
@@ -74,6 +77,9 @@ export function ProductsPage() {
         description="Catálogo de productos, precios y costo promedio."
         actions={
           <Can permission={P.CatalogManage}>
+            <Button variant="secondary" onClick={() => setImporting(true)}>
+              <Upload className="size-4" /> Importar
+            </Button>
             <Button onClick={() => openForm(null)}>
               <Plus className="size-4" /> Nuevo producto
             </Button>
@@ -193,6 +199,7 @@ export function ProductsPage() {
 
       <ProductFormDialog open={formOpen} product={editing} onClose={() => setFormOpen(false)} />
       <PriceDialog product={pricing} onClose={() => setPricing(null)} />
+      <ImportProductsDialog open={importing} onClose={() => setImporting(false)} />
     </>
   )
 }

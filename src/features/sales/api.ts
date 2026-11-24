@@ -6,6 +6,7 @@
  */
 import { http } from '@/api/http'
 import type { Guid, IsoDate, PagedResult, PageParams } from '@/api/types'
+import type { Product } from '@/features/catalog/api'
 
 export type CustomerDocumentType = 'DNI' | 'RUC' | 'CE' | 'PASSPORT'
 export type InvoiceType = 'BOLETA' | 'FACTURA'
@@ -112,10 +113,20 @@ export const customersApi = {
     http.put<Customer>(`/customers/${id}`, body).then((r) => r.data),
 }
 
+/** Espejo de `PosProductDto`. */
+export interface PosProduct {
+  product: Product
+  quantitySold: number
+  stock: number
+}
+
 export const salesApi = {
   paymentMethods: () => http.get<PaymentMethod[]>('/payment-methods').then((r) => r.data),
   list: (filters: SaleFilters) => http.get<PagedResult<SaleSummary>>('/sales', { params: clean(filters) }).then((r) => r.data),
   get: (id: Guid) => http.get<SaleDetail>(`/sales/${id}`).then((r) => r.data),
   create: (body: CreateSaleRequest) => http.post<SaleDetail>('/sales', body).then((r) => r.data),
+  /** Más vendidos de los últimos 30 días (o los primeros activos si aún no hay ventas), con stock del almacén. */
+  topProducts: (warehouseId: Guid, limit = 12) =>
+    http.get<PosProduct[]>('/sales/top-products', { params: { warehouseId, limit } }).then((r) => r.data),
   cancel: (id: Guid, reason: string) => http.post<SaleDetail>(`/sales/${id}/cancel`, { reason }).then((r) => r.data),
 }

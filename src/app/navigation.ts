@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Boxes,
   KeyRound,
+  MonitorSmartphone,
   LayoutDashboard,
   Ruler,
   ScrollText,
@@ -100,6 +101,7 @@ export const navigation: NavSection[] = [
     items: [
       { to: '/admin/users', label: 'Usuarios', icon: Users, permission: P.UsersRead },
       { to: '/admin/roles', label: 'Roles y permisos', icon: KeyRound, permission: P.UsersRead },
+      { to: '/admin/sessions', label: 'Sesiones activas', icon: MonitorSmartphone, permission: P.UsersManage },
     ],
   },
   {

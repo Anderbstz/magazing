@@ -18,6 +18,7 @@ import { calculateLine, calculateSale, round2 } from '@/lib/tax'
 import { cn } from '@/lib/utils'
 import { customersApi, type Customer, type InvoiceType, type PaymentMethod, type SaleDetail } from '../api'
 import { CustomerPicker } from '../components/customer-picker'
+import { TopProductsGrid } from '../components/top-products-grid'
 import { printReceipt } from '@/lib/print'
 import { Receipt } from '../components/receipt'
 import { useCreateSale, usePaymentMethods } from '../queries'
@@ -174,6 +175,8 @@ function PointOfSale({ onCompleted }: { onCompleted: (sale: SaleDetail) => void 
         </div>
 
         <ProductPicker autoFocus excludeIds={[]} onSelect={addProduct} className="max-w-none" />
+
+        <TopProductsGrid warehouseId={warehouseId} inCart={new Map(lines.map((l) => [l.productId, l.quantity]))} onSelect={addProduct} />
 
         <Card>
           {lines.length === 0 ? (

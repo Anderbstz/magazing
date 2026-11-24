@@ -83,3 +83,24 @@ export const rolesApi = {
   updatePermissions: (id: Guid, permissionIds: Guid[]) =>
     http.put<Role>(`/roles/${id}/permissions`, { permissionIds }).then((r) => r.data),
 }
+
+/** Espejo de `SessionDto`: una sesión = un refresh token vigente (un navegador o equipo). */
+export interface ActiveSession {
+  sessionId: Guid
+  userId: Guid
+  username: string
+  fullName: string
+  ipAddress: string | null
+  userAgent: string | null
+  startedAt: IsoDate
+  lastActivityAt: IsoDate
+  expiresAt: IsoDate
+}
+
+export const sessionsApi = {
+  list: () => http.get<ActiveSession[]>('/sessions').then((r) => r.data),
+  revoke: (id: Guid) => http.delete<void>(`/sessions/${id}`).then(() => undefined),
+  /** Cierra las sesiones sin actividad en las últimas `hours` horas (menos la propia). Devuelve cuántas cerró. */
+  revokeInactive: (hours: number) =>
+    http.post<{ revoked: number }>('/sessions/revoke-inactive', null, { params: { hours } }).then((r) => r.data.revoked),
+}

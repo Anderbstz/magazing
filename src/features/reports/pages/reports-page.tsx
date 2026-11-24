@@ -1,21 +1,21 @@
-import { Download, FileSpreadsheet, Receipt, TrendingUp, Wallet } from 'lucide-react'
+import { Download, Receipt, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
-import { DownloadButton } from '@/components/download-button'
 import { PageHeader } from '@/components/page-header'
 import { StatCard } from '@/components/stat-card'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader } from '@/components/ui/card'
 import { Input, Select } from '@/components/ui/input'
+import { Pagination } from '@/components/ui/pagination'
 import { LoadingBlock } from '@/components/ui/spinner'
 import { EmptyState, ErrorState } from '@/components/ui/states'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { formatMoney, formatQuantity } from '@/lib/format'
-import { toCsv, downloadFile } from '@/lib/csv'
 import { daysAgo, isoDate } from '@/lib/dates'
 import { cn } from '@/lib/utils'
 import type { GroupBy } from '../api'
 import { labelDate } from '../components/chart-utils'
 import { SalesBarChart, TopProductsChart } from '../components/charts'
+import { ExportDialog } from '../components/export-dialog'
 import { useSalesReport, useTopProducts } from '../queries'
 
 const iso = isoDate
@@ -26,6 +26,9 @@ const PRESETS = [
   { label: '90 días', from: () => daysAgo(89), groupBy: 'week' as GroupBy },
   { label: 'Este mes', from: () => iso(new Date()).slice(0, 8) + '01', groupBy: 'day' as GroupBy },
 ]
+
+/** Filas por página de la tabla: un mes agrupado por día entra completo. */
+const PAGE_SIZE = 31
 
 const GROUP_LABEL: Record<GroupBy, string> = { day: 'Día', week: 'Semana (desde)', month: 'Mes' }
 
@@ -38,17 +41,19 @@ export function ReportsPage() {
   const report = useSalesReport({ from, to, groupBy })
   const top = useTopProducts({ from, to, limit: 10 })
 
+  const [exporting, setExporting] = useState(false)
+
+  // La página vuelve a 1 cuando cambian los filtros: se guarda junto con la consulta que la originó.
+  const queryKey = `${from}|${to}|${groupBy}`
+  const [pageState, setPageState] = useState({ key: queryKey, page: 1 })
+  const rows = report.data?.rows ?? []
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const page = pageState.key === queryKey ? Math.min(pageState.page, totalPages) : 1
+  const pageSlice: [number, number] = [(page - 1) * PAGE_SIZE, Math.min(page * PAGE_SIZE, rows.length)]
+
   const periodLabel = (p: string) =>
     groupBy === 'month' ? new Intl.DateTimeFormat('es-PE', { month: 'short', year: 'numeric' }).format(new Date(p + 'T12:00:00')) : labelDate(p)
-
-  function exportCsv() {
-    if (!report.data) return
-    const csv = toCsv(
-      ['Periodo', 'Comprobantes', 'Venta sin IGV', 'IGV', 'Total', 'Costo', 'Utilidad bruta'],
-      report.data.rows.map((r) => [r.period, r.count, r.subtotal, r.taxAmount, r.total, r.cost, r.grossProfit]),
-    )
-    downloadFile(csv, `ventas_${from}_${to}.csv`, 'text/csv')
-  }
+  const shortDate = (p: string) => new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(p + 'T12:00:00'))
 
   const t = report.data?.totals
   const margin = t && t.subtotal > 0 ? (t.grossProfit / t.subtotal) * 100 : 0
@@ -59,19 +64,9 @@ export function ReportsPage() {
         title="Reportes"
         description="Ventas, utilidad y productos más vendidos. Las ventas anuladas no se cuentan."
         actions={
-          <>
-            <Button variant="secondary" onClick={exportCsv} disabled={!report.data?.rows.length}>
-              <Download className="size-4" /> Exportar CSV
-            </Button>
-            <DownloadButton
-              path="/reports/sales/export"
-              params={{ from, to, groupBy }}
-              fallbackName={`ventas_${from}_${to}.xlsx`}
-              disabled={!report.data?.rows.length}
-            >
-              <FileSpreadsheet className="size-4" /> Exportar Excel
-            </DownloadButton>
-          </>
+          <Button variant="secondary" onClick={() => setExporting(true)} disabled={!rows.length}>
+            <Download className="size-4" /> Exportar
+          </Button>
         }
       />
 
@@ -139,7 +134,7 @@ export function ReportsPage() {
                   </tr>
                 </THead>
                 <TBody>
-                  {report.data.rows.map((r) => (
+                  {rows.slice(...pageSlice).map((r) => (
                     <TR key={r.period}>
                       <TD>{periodLabel(r.period)}</TD>
                       <TD className="tabular text-right">{r.count}</TD>
@@ -152,6 +147,9 @@ export function ReportsPage() {
                   ))}
                 </TBody>
               </Table>
+              {totalPages > 1 && (
+                <Pagination page={page} totalPages={totalPages} totalCount={rows.length} onPageChange={(p) => setPageState({ key: queryKey, page: p })} />
+              )}
             </>
           )}
         </Card>
@@ -196,6 +194,20 @@ export function ReportsPage() {
           )}
         </Card>
       </div>
+
+      {exporting && (
+        <ExportDialog
+          open
+          onClose={() => setExporting(false)}
+          from={from}
+          to={to}
+          groupBy={groupBy}
+          rows={rows}
+          pageSlice={pageSlice}
+          pageLabel={`${page} de ${totalPages}`}
+          formatDate={shortDate}
+        />
+      )}
     </>
   )
 }

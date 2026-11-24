@@ -1,13 +1,14 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Guid, PageParams } from '@/api/types'
-import { rolesApi, usersApi, type CreateRoleRequest, type CreateUserRequest, type UpdateUserRequest } from './api'
+import { rolesApi, sessionsApi, usersApi, type CreateRoleRequest, type CreateUserRequest, type UpdateUserRequest } from './api'
 
 export const adminKeys = {
   users: ['users'] as const,
   userList: (params: PageParams) => ['users', 'list', params] as const,
   roles: ['roles'] as const,
   permissions: ['permissions'] as const,
+  sessions: ['sessions'] as const,
 }
 
 export function useUsers(params: PageParams) {
@@ -90,5 +91,29 @@ export function useUpdateRolePermissions() {
       toast.success('Permisos actualizados. Se aplican cuando cada usuario renueve su sesión.')
       return qc.invalidateQueries({ queryKey: adminKeys.roles })
     },
+  })
+}
+
+export function useActiveSessions() {
+  return useQuery({ queryKey: adminKeys.sessions, queryFn: sessionsApi.list, refetchInterval: 60_000 })
+}
+
+export function useRevokeSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: sessionsApi.revoke,
+    meta: { errorTitle: 'No se pudo cerrar la sesión' },
+    onSuccess: () => toast.success('Sesión cerrada', { description: 'Ese equipo tendrá que volver a iniciar sesión.' }),
+    onSettled: () => qc.invalidateQueries({ queryKey: adminKeys.sessions }),
+  })
+}
+
+export function useRevokeInactiveSessions() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: sessionsApi.revokeInactive,
+    meta: { errorTitle: 'No se pudieron cerrar las sesiones' },
+    onSuccess: (revoked) => toast.success(revoked === 1 ? 'Se cerró 1 sesión inactiva' : `Se cerraron ${revoked} sesiones inactivas`),
+    onSettled: () => qc.invalidateQueries({ queryKey: adminKeys.sessions }),
   })
 }

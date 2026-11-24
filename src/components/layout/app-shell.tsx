@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { navigationFor, type NavItem, type NavSection } from '@/app/navigation'
 import { P } from '@/config/permissions'
 import { logout } from '@/features/auth/session'
+import { AssistantPanel } from '@/features/assistant/components/assistant-panel'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { useInstallPrompt } from '@/hooks/use-install-prompt'
 import { useMediaQuery } from '@/hooks/use-media-query'
@@ -85,10 +86,12 @@ export function AppShell() {
           <span className="font-semibold">Magazing</span>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-8 lg:pt-8">
           <Outlet />
         </main>
       </div>
+
+      <AssistantPanel />
     </div>
   )
 }

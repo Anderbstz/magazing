@@ -21,6 +21,12 @@ server {
         add_header Cache-Control "no-cache";
     }
 
+    # Service worker y manifest de la PWA: siempre se revisan, si no la app no detecta versiones nuevas.
+    location ~ ^/(sw\.js|workbox-.*\.js|registerSW\.js|manifest\.webmanifest)$ {
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
     # Fallback de SPA: cualquier ruta de React (/sales/pos, /inventory/stock…) sirve index.html.
     location / {
         try_files $uri $uri/ /index.html;

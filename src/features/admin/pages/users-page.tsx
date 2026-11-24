@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Copy, KeyRound, Pencil, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useSearchParams } from 'react-router'
 import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
@@ -22,6 +22,7 @@ import { Can } from '@/features/auth/guards'
 import { useCan, useSession } from '@/features/auth/use-auth'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { formatDateTime } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import type { Role, User, UserAccess } from '../api'
 import { useCreateUser, useResetUserAccess, useRoles, useUpdateUser, useUsers } from '../queries'
 
@@ -273,6 +274,22 @@ function UserFormDialog({
 
   const isSelf = user?.userId === me?.userId
 
+  // ADMIN ya tiene todos los permisos: no se combina con otros roles, y nadie se lo quita a sí mismo.
+  const selectedRoles = useWatch({ control: form.control, name: 'roleIds' }) ?? []
+  const adminRoleId = roles.data?.find((r) => r.name === 'ADMIN')?.roleId
+  const adminSelected = !!adminRoleId && selectedRoles.includes(adminRoleId)
+  const lockOwnAdmin = isSelf && !!user?.roles.includes('ADMIN')
+
+  function toggleRole(roleId: string, checked: boolean) {
+    const next =
+      roleId === adminRoleId
+        ? checked ? [roleId] : []
+        : checked
+          ? [...selectedRoles.filter((id) => id !== adminRoleId), roleId]
+          : selectedRoles.filter((id) => id !== roleId)
+    form.setValue('roleIds', next, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })
+  }
+
   return (
     <Dialog
       open={open}
@@ -315,16 +332,35 @@ function UserFormDialog({
             <p className="text-sm text-slate-500">Cargando roles…</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
-              {roles.data?.map((r) => (
-                <label key={r.roleId} className="flex items-start gap-2 rounded-lg p-2 text-sm ring-1 ring-slate-200 hover:bg-slate-50">
-                  <Checkbox value={r.roleId} className="mt-0.5" {...form.register('roleIds')} />
-                  <span>
-                    <span className="font-medium text-slate-800">{r.name}</span>
-                    {r.description && <span className="block text-xs text-slate-500">{r.description}</span>}
-                  </span>
-                </label>
-              ))}
+              {roles.data?.map((r) => {
+                const disabled = r.roleId === adminRoleId ? lockOwnAdmin : adminSelected
+                return (
+                  <label
+                    key={r.roleId}
+                    className={cn(
+                      'flex items-start gap-2 rounded-lg p-2 text-sm ring-1 ring-slate-200',
+                      disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-50',
+                    )}
+                  >
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={selectedRoles.includes(r.roleId)}
+                      disabled={disabled}
+                      onChange={(e) => toggleRole(r.roleId, e.target.checked)}
+                    />
+                    <span>
+                      <span className="font-medium text-slate-800">{r.name}</span>
+                      {r.description && <span className="block text-xs text-slate-500">{r.description}</span>}
+                    </span>
+                  </label>
+                )
+              })}
             </div>
+          )}
+          {lockOwnAdmin ? (
+            <p className="mt-1.5 text-xs text-slate-500">No puedes quitarte a ti mismo el rol ADMIN.</p>
+          ) : (
+            adminSelected && <p className="mt-1.5 text-xs text-slate-500">ADMIN ya incluye todos los permisos: no hace falta otro rol.</p>
           )}
           {errors.roleIds && (
             <p role="alert" className="mt-1.5 text-xs text-red-600">

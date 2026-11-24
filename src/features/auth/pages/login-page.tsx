@@ -10,6 +10,7 @@ import { Field } from '@/components/ui/field'
 import { Checkbox, Input } from '@/components/ui/input'
 import { queryClient } from '@/lib/query-client'
 import { authApi } from '../api'
+import { GoogleSignInButton } from '../components/google-sign-in'
 import { session } from '../session'
 import { useSession } from '../use-auth'
 
@@ -73,7 +74,34 @@ export function LoginPage() {
     },
   })
 
-  const slow = useSlowFlag(login.isPending)
+  const googleLogin = useMutation({
+    mutationFn: authApi.google,
+    meta: { silent: true },
+    onSuccess: (response) => {
+      queryClient.clear()
+      session.start(response)
+      navigate(from, { replace: true })
+    },
+  })
+
+  const signInWithPassword = (values: { username: string; password: string }) => {
+    googleLogin.reset()
+    login.mutate(values)
+  }
+
+  const signInWithGoogle = (idToken: string) => {
+    login.reset()
+    googleLogin.mutate(idToken)
+  }
+
+  const loginError = login.error
+    ? login.error.status === 401
+      ? 'Usuario o contraseña incorrectos.'
+      : login.error.message
+    : googleLogin.error?.message
+  const busy = login.isPending || googleLogin.isPending
+
+  const slow = useSlowFlag(busy)
   const checkCaps = (e: KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState('CapsLock'))
 
   if (status === 'authenticated') return <Navigate to={from} replace />
@@ -137,7 +165,7 @@ export function LoginPage() {
             <h1 className="text-[1.65rem] font-semibold tracking-tight text-slate-900">{remembered ? `Hola de nuevo, ${remembered}` : 'Inicia sesión'}</h1>
             <p className="mt-1.5 text-sm text-slate-500">Ingresa con la cuenta que te dio tu administrador.</p>
 
-            <form className="mt-8 space-y-5" noValidate onSubmit={form.handleSubmit(({ username, password }) => login.mutate({ username, password }))}>
+            <form className="mt-8 space-y-5" noValidate onSubmit={form.handleSubmit(({ username, password }) => signInWithPassword({ username, password }))}>
               <Field label="Usuario" htmlFor="username" error={errors.username?.message}>
                 <Input
                   id="username"
@@ -185,16 +213,32 @@ export function LoginPage() {
                 <Checkbox {...form.register('remember')} /> Recordar mi usuario en este equipo
               </label>
 
-              {login.error && (
+              {loginError && (
                 <p className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 ring-1 ring-red-200" role="alert">
                   <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-                  {login.error.status === 401 ? 'Usuario o contraseña incorrectos.' : login.error.message}
+                  {loginError}
                 </p>
               )}
 
-              <Button type="submit" className="h-11 w-full text-[15px]" loading={login.isPending}>
+              <Button type="submit" className="h-11 w-full text-[15px]" loading={login.isPending} disabled={googleLogin.isPending}>
                 {login.isPending ? 'Ingresando…' : 'Ingresar'}
               </Button>
+
+              {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-xs text-slate-400" aria-hidden>
+                    <span className="h-px flex-1 bg-slate-200" />
+                    o, si eres administrador
+                    <span className="h-px flex-1 bg-slate-200" />
+                  </div>
+                  <GoogleSignInButton onCredential={signInWithGoogle} disabled={busy} />
+                  {googleLogin.isPending && (
+                    <p className="text-center text-xs text-slate-500" role="status">
+                      Verificando tu cuenta de Google…
+                    </p>
+                  )}
+                </div>
+              )}
 
               {slow && (
                 <p className="text-center text-xs text-slate-500" role="status">

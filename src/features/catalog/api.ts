@@ -103,6 +103,24 @@ function clean<T extends object>(params: T) {
   return Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
 }
 
+/** Espejo de `ProductImportResultDto`. */
+export interface ProductImportRow {
+  row: number
+  sku: string | null
+  name: string | null
+  status: 'valid' | 'error' | 'created'
+  message: string | null
+}
+
+export interface ProductImportResult {
+  dryRun: boolean
+  totalRows: number
+  validRows: number
+  errorRows: number
+  created: number
+  rows: ProductImportRow[]
+}
+
 export const productsApi = {
   list: (filters: ProductFilters) =>
     http.get<PagedResult<Product>>('/products', { params: clean(filters) }).then((r) => r.data),
@@ -110,6 +128,15 @@ export const productsApi = {
   prices: (id: Guid) => http.get<ProductPrice[]>(`/products/${id}/prices`).then((r) => r.data),
   create: (body: CreateProductRequest) => http.post<Product>('/products', body).then((r) => r.data),
   update: (id: Guid, body: UpdateProductRequest) => http.put<Product>(`/products/${id}`, body).then((r) => r.data),
+  /** Sube un .xlsx o .csv. Con `dryRun` solo valida y devuelve la vista previa; sin él crea las filas válidas. */
+  importFile: (file: File, dryRun: boolean) => {
+    const form = new FormData()
+    form.append('file', file)
+    return http
+      // El cliente manda JSON por defecto: con multipart, axios deja que el navegador ponga el boundary.
+      .post<ProductImportResult>('/products/import', form, { params: { dryRun }, timeout: 120_000, headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data)
+  },
   changePrice: (id: Guid, price: number) =>
     http.put<ProductPrice>(`/products/${id}/price`, { price }).then((r) => r.data),
 }

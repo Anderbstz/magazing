@@ -24,6 +24,10 @@ export const authApi = {
   login: (body: LoginRequest) =>
     http.post<AuthResponse>('/auth/login', body, { skipAuthRefresh: true }).then((r) => r.data),
 
+  /** Acceso de administradores con Google: se envía el ID token que firma Google y la API lo valida. */
+  google: (idToken: string) =>
+    http.post<AuthResponse>('/auth/google', { idToken }, { skipAuthRefresh: true }).then((r) => r.data),
+
   refresh: (refreshToken: string) =>
     http
       .post<AuthResponse>('/auth/refresh', { refreshToken }, { skipAuthRefresh: true })

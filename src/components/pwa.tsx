@@ -23,7 +23,7 @@ export function PwaUpdatePrompt() {
   if (!needRefresh) return null
 
   return (
-    <div role="status" className="pop-in fixed right-4 bottom-4 z-[60] flex max-w-sm items-center gap-3 rounded-xl bg-white p-4 shadow-lg ring-1 ring-slate-200">
+    <div role="status" className="pop-in fixed bottom-4 left-4 z-[60] flex max-w-sm items-center gap-3 rounded-xl bg-white p-4 shadow-lg ring-1 ring-slate-200">
       <RefreshCw className="size-5 shrink-0 text-brand-700" aria-hidden />
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-medium text-slate-900">Hay una versión nueva</p>
